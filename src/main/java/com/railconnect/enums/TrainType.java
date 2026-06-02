@@ -1,0 +1,2 @@
+package com.railconnect.enums;
+public enum TrainType { RAJDHANI, SHATABDI, DURONTO, VANDE_BHARAT, GARIB_RATH, SUPERFAST, EXPRESS, PASSENGER, GOODS }

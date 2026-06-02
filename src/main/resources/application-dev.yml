@@ -1,0 +1,11 @@
+spring:
+  jpa:
+    show-sql: true
+  flyway:
+    clean-on-validation-error: true
+
+logging:
+  level:
+    com.railconnect: DEBUG
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql: TRACE
