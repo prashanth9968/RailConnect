@@ -16,8 +16,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.railconnect.config.RabbitMQConfig;
-import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import com.railconnect.config.KafkaConfig;
+import org.springframework.kafka.core.KafkaTemplate;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import java.math.BigDecimal;
@@ -33,7 +33,7 @@ public class PaymentService {
     private final PaymentRepository paymentRepository;
     private final BookingRepository bookingRepository;
     private final RazorpayClient razorpayClient;
-    private final RabbitTemplate rabbitTemplate;
+    private final KafkaTemplate<String, Object> kafkaTemplate;
 
     @Value("${razorpay.key-id}")
     private String razorpayKeyId;
@@ -120,13 +120,16 @@ public class PaymentService {
         bookingRepository.save(booking);
 
         try {
-            rabbitTemplate.convertAndSend(
-                RabbitMQConfig.RAILCONNECT_EXCHANGE,
-                RabbitMQConfig.BOOKING_CONFIRMED_KEY,
-                Map.of("bookingId", booking.getId().toString())
+            kafkaTemplate.send(
+                KafkaConfig.TICKET_CONFIRMED_TOPIC,
+                Map.of("bookingId", booking.getId().toString(), "status", "CONFIRMED")
+            );
+            kafkaTemplate.send(
+                KafkaConfig.PAYMENT_COMPLETED_TOPIC,
+                Map.of("bookingId", booking.getId().toString(), "paymentId", payment.getId().toString(), "amount", payment.getAmount().toString())
             );
         } catch (Exception e) {
-            log.error("Failed to publish booking confirmation event to RabbitMQ: {}", e.getMessage());
+            log.error("Failed to publish payment verification events to Kafka: {}", e.getMessage());
         }
 
         log.info("Payment verified for PNR: {}", booking.getPnrNumber());

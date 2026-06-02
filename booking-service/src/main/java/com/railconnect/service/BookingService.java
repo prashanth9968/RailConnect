@@ -11,8 +11,8 @@ import com.railconnect.util.FareCalculator;
 import com.railconnect.util.PNRGenerator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import com.railconnect.config.RabbitMQConfig;
-import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import com.railconnect.config.KafkaConfig;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -38,7 +38,8 @@ public class BookingService {
     private final TrainRouteRepository routeRepository;
     private final PNRGenerator pnrGenerator;
     private final FareCalculator fareCalculator;
-    private final RabbitTemplate rabbitTemplate;
+    private final KafkaTemplate<String, Object> kafkaTemplate;
+    private final AutoPromotionService autoPromotionService;
 
     @Transactional
     public BookingResponse initiateBooking(BookingRequest request, UUID userId) {
@@ -126,6 +127,16 @@ public class BookingService {
 
             Booking saved = bookingRepository.save(booking);
             log.info("Booking initiated: PNR={}, status={}", pnr, saved.getStatus());
+
+            try {
+                kafkaTemplate.send(KafkaConfig.BOOKING_CREATED_TOPIC, Map.of("bookingId", saved.getId().toString()));
+                if (saved.getStatus() != BookingStatus.WAITLISTED) {
+                    kafkaTemplate.send(KafkaConfig.SEAT_LOCKED_TOPIC, Map.of("bookingId", saved.getId().toString(), "count", String.valueOf(count)));
+                }
+            } catch (Exception ex) {
+                log.error("Failed to publish booking created event to Kafka: {}", ex.getMessage());
+            }
+
             return toBookingResponse(saved);
 
         } catch (ObjectOptimisticLockingFailureException e) {
@@ -177,14 +188,6 @@ public class BookingService {
             booking.getTotalAmount(), booking.getJourneyDate(), LocalDate.now(), booking.getQuotaType());
         BigDecimal refundAmount = booking.getTotalAmount().subtract(cancellationCharge);
 
-        // Release seats
-        booking.getPassengers().forEach(p -> {
-            if (p.getSeatNumber() != null) {
-                seatRepository.findByCoachAndDate(Long.parseLong("0"), booking.getJourneyDate())
-                    .forEach(s -> { if (s.getSeatNumber().equals(p.getSeatNumber())) s.setStatus(SeatStatus.AVAILABLE); });
-            }
-        });
-
         Cancellation cancellation = Cancellation.builder()
             .booking(booking)
             .reason(request.getReason())
@@ -198,45 +201,42 @@ public class BookingService {
         booking.setCancellation(cancellation);
         Booking saved = bookingRepository.save(booking);
 
-        // Promote waitlisted passengers
-        promoteWaitlistedPassengers(booking);
+        // Auto-promote or release seats
+        booking.getPassengers().forEach(p -> {
+            if (p.getSeatNumber() != null) {
+                boolean promoted = autoPromotionService.promotePassengers(
+                    booking.getTrain().getId(), 
+                    booking.getJourneyDate(), 
+                    p.getCoachNumber(), 
+                    p.getSeatNumber()
+                );
+                if (!promoted) {
+                    // Release the seat back to AVAILABLE
+                    seatRepository.findByCoachAndDate(Long.parseLong("0"), booking.getJourneyDate())
+                        .forEach(s -> {
+                            if (s.getSeatNumber().equals(p.getSeatNumber())) {
+                                s.setStatus(SeatStatus.AVAILABLE);
+                                seatRepository.save(s);
+                            }
+                        });
+                }
+            }
+        });
 
         try {
-            rabbitTemplate.convertAndSend(
-                RabbitMQConfig.RAILCONNECT_EXCHANGE,
-                RabbitMQConfig.BOOKING_CANCELLED_KEY,
-                Map.of("bookingId", booking.getId().toString(), "refundAmount", refundAmount.toString())
+            kafkaTemplate.send(
+                KafkaConfig.TICKET_CONFIRMED_TOPIC,
+                Map.of("bookingId", booking.getId().toString(), "status", "CANCELLED", "refundAmount", refundAmount.toString())
             );
         } catch (Exception e) {
-            log.error("Failed to publish booking cancellation event to RabbitMQ: {}", e.getMessage());
+            log.error("Failed to publish booking cancellation event to Kafka: {}", e.getMessage());
         }
 
         log.info("Booking cancelled: PNR={}, refund={}", booking.getPnrNumber(), refundAmount);
         return toBookingResponse(saved);
     }
 
-    private void promoteWaitlistedPassengers(Booking cancelledBooking) {
-        List<Booking> waitlisted = bookingRepository.findByTrainIdAndJourneyDateAndStatus(
-            cancelledBooking.getTrain().getId(), cancelledBooking.getJourneyDate(), BookingStatus.WAITLISTED);
 
-        waitlisted.stream().min(Comparator.comparing(b -> b.getPassengers().stream()
-            .mapToInt(Passenger::getWaitlistNumber).min().orElse(Integer.MAX_VALUE)))
-            .ifPresent(wb -> {
-                wb.setStatus(BookingStatus.CONFIRMED);
-                wb.getPassengers().forEach(p -> p.setBookingStatus("CNF"));
-                bookingRepository.save(wb);
-
-                try {
-                    rabbitTemplate.convertAndSend(
-                        RabbitMQConfig.RAILCONNECT_EXCHANGE,
-                        RabbitMQConfig.WL_PROMOTION_KEY,
-                        Map.of("bookingId", wb.getId().toString())
-                    );
-                } catch (Exception e) {
-                    log.error("Failed to publish waitlist promotion event to RabbitMQ: {}", e.getMessage());
-                }
-            });
-    }
 
     private List<Passenger> buildPassengers(BookingRequest req, Booking booking, List<Seat> seats) {
         List<Passenger> passengers = new ArrayList<>();
