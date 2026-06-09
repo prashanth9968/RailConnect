@@ -1,0 +1,17 @@
+{
+  "name": "RailConnect",
+  "short_name": "RailConnect",
+  "description": "Smart Railway Booking - Book tickets, track trains, manage journeys",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#6366f1",
+  "icons": [
+    {
+      "src": "/train.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

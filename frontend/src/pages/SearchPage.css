@@ -1,0 +1,302 @@
+/* SearchPage.css */
+
+/* ── Search Bar ── */
+.search-bar-wrapper {
+  position: sticky;
+  top: var(--nav-height);
+  z-index: 50;
+  border-bottom: 1px solid var(--color-border);
+  padding: 16px 0;
+}
+
+.search-bar-form {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.sbar-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+  min-width: 140px;
+}
+
+.sbar-date { max-width: 180px; }
+
+.swap-btn-sm {
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--color-border);
+  border-radius: 50%;
+  background: var(--color-surface-2);
+  color: var(--color-primary-light);
+  font-size: 1rem;
+  cursor: pointer;
+  transition: var(--transition);
+  flex-shrink: 0;
+  align-self: flex-end;
+}
+
+.swap-btn-sm:hover {
+  background: var(--color-primary);
+  color: white;
+  border-color: transparent;
+  transform: rotate(180deg);
+}
+
+/* ── Content ── */
+.search-content { padding-top: 32px; padding-bottom: 80px; }
+
+.results-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.results-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.results-count {
+  font-size: 0.875rem;
+  color: var(--color-text-muted);
+  margin-left: 8px;
+}
+
+.sort-options {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sort-label { font-size: 0.875rem; color: var(--color-text-muted); }
+
+.sort-btn {
+  padding: 6px 14px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+  background: transparent;
+  color: var(--color-text-secondary);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.sort-btn.active {
+  background: var(--gradient-primary);
+  color: white;
+  border-color: transparent;
+}
+
+.sort-btn:hover:not(.active) {
+  background: var(--color-surface-2);
+  color: var(--color-text);
+}
+
+/* ── Train List ── */
+.train-list { display: flex; flex-direction: column; gap: 16px; }
+
+.loading-state { display: flex; flex-direction: column; gap: 16px; margin-top: 24px; }
+
+/* ── Train Card ── */
+.train-card { overflow: hidden; }
+
+.train-header {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 20px 24px;
+  flex-wrap: wrap;
+}
+
+.train-info {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 200px;
+}
+
+.train-number-badge {
+  padding: 6px 12px;
+  background: rgba(99,102,241,0.15);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 0.875rem;
+  color: var(--color-primary-light);
+  white-space: nowrap;
+}
+
+.train-name { font-weight: 700; font-size: 1rem; margin-bottom: 3px; }
+.train-type { font-size: 0.8rem; color: var(--color-text-muted); }
+
+.train-route {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.route-time {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 80px;
+}
+
+.time {
+  font-family: var(--font-display);
+  font-size: 1.3rem;
+  font-weight: 800;
+}
+
+.station {
+  font-size: 0.8125rem;
+  color: var(--color-text-muted);
+}
+
+.route-duration {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.duration-line {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.duration-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--color-primary);
+  flex-shrink: 0;
+}
+
+.duration-track {
+  flex: 1;
+  height: 2px;
+  background: linear-gradient(90deg, var(--color-primary), var(--color-secondary));
+  border-radius: var(--radius-full);
+}
+
+.duration-text {
+  font-size: 0.8125rem;
+  color: var(--color-text-muted);
+  font-weight: 500;
+}
+
+.train-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.train-runs {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+}
+
+/* ── Class Grid ── */
+.train-classes {
+  border-top: 1px solid var(--color-border);
+  padding: 20px 24px;
+  background: rgba(15,23,42,0.4);
+}
+
+.class-grid {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.class-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 16px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  cursor: pointer;
+  transition: var(--transition);
+  min-width: 110px;
+}
+
+.class-card:hover {
+  border-color: var(--cls-color, var(--color-primary));
+  background: rgba(99,102,241,0.08);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+}
+
+.class-badge {
+  width: 40px; height: 40px;
+  border: 2px solid;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 0.875rem;
+}
+
+.class-name {
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
+  text-align: center;
+}
+
+.class-fare {
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+/* ── Empty State ── */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 24px;
+  text-align: center;
+  gap: 12px;
+}
+
+.empty-icon { font-size: 3.5rem; opacity: 0.7; }
+
+.empty-state h3 {
+  font-size: 1.25rem;
+  color: var(--color-text);
+}
+
+.empty-state p {
+  color: var(--color-text-muted);
+  max-width: 400px;
+}
+
+@media (max-width: 768px) {
+  .train-header { gap: 16px; }
+  .train-route { min-width: 100%; order: 3; }
+  .train-info { min-width: unset; }
+}

@@ -1,0 +1,192 @@
+/* TrackTrainPage.css */
+.track-page { padding: 48px 0 80px; }
+
+.page-hero { margin-bottom: 32px; }
+.page-hero h1 { font-size: 2rem; margin-bottom: 8px; }
+.page-hero p { color: var(--color-text-muted); }
+
+.track-search-box { padding: 28px; }
+
+.track-form {
+  display: flex;
+  gap: 16px;
+  align-items: flex-end;
+}
+
+.track-result { display: flex; flex-direction: column; gap: 20px; margin-top: 28px; }
+
+/* ── Track Header Card ── */
+.track-header-card { padding: 24px; display: flex; flex-direction: column; gap: 20px; }
+
+.th-main {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.th-info { display: flex; flex-direction: column; gap: 4px; }
+.th-number { font-family: var(--font-display); font-size: 1rem; font-weight: 800; color: var(--color-primary-light); }
+.th-name { font-size: 1.4rem; font-weight: 800; }
+.th-route { font-size: 0.9rem; color: var(--color-text-muted); margin-top: 2px; }
+
+.th-status { display: flex; flex-direction: column; align-items: flex-end; gap: 10px; }
+
+.delay-indicator {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.delay-dot {
+  width: 14px; height: 14px;
+  border-radius: 50%;
+  background: var(--delay-color, var(--color-success));
+  box-shadow: 0 0 12px var(--delay-color, var(--color-success));
+  animation: pulse-glow 2s infinite;
+  flex-shrink: 0;
+}
+
+.delay-label { font-size: 0.75rem; color: var(--color-text-muted); margin-bottom: 2px; }
+.delay-value { font-size: 1rem; font-weight: 800; color: var(--delay-color, var(--color-success)); }
+
+.refresh-btn { transition: var(--transition); }
+.refresh-btn.refreshing { opacity: 0.7; }
+
+.auto-refresh-label { font-size: 0.75rem; color: var(--color-text-muted); }
+
+/* ── Current Location ── */
+.current-location {
+  padding: 16px;
+  background: rgba(99,102,241,0.08);
+  border: 1px solid rgba(99,102,241,0.2);
+  border-radius: var(--radius-md);
+}
+
+.cl-label { font-size: 0.75rem; color: var(--color-text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px; }
+.cl-station { font-family: var(--font-display); font-size: 1.5rem; font-weight: 800; }
+.cl-next { font-size: 0.875rem; color: var(--color-text-muted); margin-top: 6px; }
+
+/* ── GPS Badge ── */
+.gps-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.8125rem;
+  color: var(--color-text-muted);
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+  padding: 6px 14px;
+  width: fit-content;
+}
+
+.live-badge {
+  padding: 2px 8px;
+  background: var(--color-danger);
+  color: white;
+  border-radius: var(--radius-full);
+  font-size: 0.6875rem;
+  font-weight: 800;
+  animation: pulse-glow 1s infinite;
+}
+
+/* ── Schedule ── */
+.track-schedule { padding: 24px; }
+.track-schedule h2 { font-size: 1.125rem; margin-bottom: 20px; }
+
+.schedule-list { display: flex; flex-direction: column; }
+
+.schedule-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 0 0 4px;
+  opacity: 0.7;
+  transition: var(--transition);
+}
+
+.schedule-item.current { opacity: 1; }
+.schedule-item.passed { opacity: 0.5; }
+
+.si-marker {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  flex-shrink: 0;
+  width: 16px;
+  padding-top: 4px;
+}
+
+.si-dot {
+  width: 12px; height: 12px;
+  border-radius: 50%;
+  border: 2px solid var(--color-border);
+  background: var(--color-surface);
+  flex-shrink: 0;
+}
+
+.schedule-item.passed .si-dot { background: var(--color-success); border-color: var(--color-success); }
+.schedule-item.current .si-dot {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  box-shadow: 0 0 8px var(--color-primary);
+  width: 16px; height: 16px;
+}
+
+.si-line {
+  width: 2px;
+  flex: 1;
+  min-height: 40px;
+  background: var(--color-border);
+  margin-top: 2px;
+}
+
+.schedule-item.passed .si-line { background: var(--color-success); }
+
+.si-content { flex: 1; padding: 2px 0; }
+.si-name { font-weight: 600; font-size: 0.9375rem; }
+.si-code { font-size: 0.8rem; color: var(--color-text-muted); }
+
+.si-times {
+  text-align: right;
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+  padding: 2px 0;
+  line-height: 1.8;
+}
+
+.si-actual { color: var(--color-text-secondary); }
+
+.si-delay { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; padding-top: 4px; min-width: 50px; }
+
+.si-delay-badge { font-size: 0.8rem; font-weight: 700; }
+
+/* ── Info Grid ── */
+.track-info-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+  margin-top: 32px;
+}
+
+.track-info-card {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  text-align: center;
+  align-items: center;
+}
+
+.track-info-card h3 { font-size: 1rem; }
+.track-info-card p { font-size: 0.875rem; color: var(--color-text-muted); line-height: 1.6; }
+
+@media (max-width: 768px) {
+  .track-form { flex-direction: column; }
+  .th-main { flex-direction: column; }
+  .th-status { align-items: flex-start; }
+  .track-info-grid { grid-template-columns: 1fr; }
+}
