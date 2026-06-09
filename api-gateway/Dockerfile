@@ -2,14 +2,14 @@ FROM maven:3.9-eclipse-temurin-21-alpine AS builder
 WORKDIR /app
 COPY pom.xml .
 COPY railconnect-common railconnect-common
-COPY api-gateway api-gateway
 COPY auth-service auth-service
+COPY booking-service booking-service
 COPY inventory-service inventory-service
 COPY payment-service payment-service
 COPY tracking-service tracking-service
 COPY notification-service notification-service
-COPY booking-service booking-service
-RUN mvn clean package -DskipTests -pl booking-service -am -q
+COPY api-gateway api-gateway
+RUN mvn clean package -DskipTests -pl api-gateway -am -q
 
 FROM eclipse-temurin:21-jre-alpine AS runtime
 RUN apk add --no-cache curl tzdata && \
@@ -18,7 +18,7 @@ RUN apk add --no-cache curl tzdata && \
 WORKDIR /app
 RUN addgroup -S railconnect && adduser -S railconnect -G railconnect
 USER railconnect
-COPY --from=builder /app/booking-service/target/*.jar app.jar
-EXPOSE 8082
+COPY --from=builder /app/api-gateway/target/*.jar app.jar
+EXPOSE 8080
 ENV JAVA_OPTS="-Xms256m -Xmx512m -XX:+UseG1GC -XX:+UseContainerSupport"
 ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar app.jar"]

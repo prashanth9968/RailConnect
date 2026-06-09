@@ -2,6 +2,12 @@ FROM maven:3.9-eclipse-temurin-21-alpine AS builder
 WORKDIR /app
 COPY pom.xml .
 COPY railconnect-common railconnect-common
+COPY api-gateway api-gateway
+COPY auth-service auth-service
+COPY booking-service booking-service
+COPY inventory-service inventory-service
+COPY payment-service payment-service
+COPY notification-service notification-service
 COPY tracking-service tracking-service
 RUN mvn clean package -DskipTests -pl tracking-service -am -q
 

@@ -8,41 +8,41 @@ spring:
     gateway:
       routes:
         - id: auth-service
-          uri: http://localhost:8081
+          uri: ${AUTH_SERVICE_URI:http://localhost:8081}
           predicates:
             - Path=/api/v1/auth/**
 
         - id: booking-service
-          uri: http://localhost:8082
+          uri: ${BOOKING_SERVICE_URI:http://localhost:8082}
           predicates:
             - Path=/api/v1/bookings/**
 
         - id: tracking-service-live
-          uri: http://localhost:8085
+          uri: ${TRACKING_SERVICE_URI:http://localhost:8085}
           predicates:
             - Path=/api/v1/trains/*/live-status, /api/v1/trains/*/maps-config
 
         - id: inventory-service
-          uri: http://localhost:8083
+          uri: ${INVENTORY_SERVICE_URI:http://localhost:8083}
           predicates:
             - Path=/api/v1/trains/**, /api/v1/stations/**
 
         - id: payment-service
-          uri: http://localhost:8084
+          uri: ${PAYMENT_SERVICE_URI:http://localhost:8084}
           predicates:
             - Path=/api/v1/payments/**
 
         - id: tracking-service
-          uri: http://localhost:8085
+          uri: ${TRACKING_SERVICE_URI:http://localhost:8085}
           predicates:
             - Path=/api/v1/tracking/**
 
         - id: tracking-websocket
-          uri: ws://localhost:8085
+          uri: ${TRACKING_WEBSOCKET_URI:ws://localhost:8085}
           predicates:
             - Path=/ws/**
 
         - id: notification-service
-          uri: http://localhost:8086
+          uri: ${NOTIFICATION_SERVICE_URI:http://localhost:8086}
           predicates:
             - Path=/api/v1/notifications/**

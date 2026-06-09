@@ -1,5 +1,3 @@
-version: '3.9'
-
 services:
   postgres:
     image: postgres:16-alpine
@@ -33,18 +31,44 @@ services:
       timeout: 5s
       retries: 5
 
-  rabbitmq:
-    image: rabbitmq:3.12-management-alpine
-    container_name: railconnect-rabbitmq
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.3.0
+    container_name: railconnect-zookeeper
     restart: unless-stopped
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
     ports:
-      - "5672:5672"
-      - "15672:15672"
+      - "2181:2181"
     healthcheck:
-      test: ["CMD", "rabbitmq-diagnostics", "check_port_connectivity"]
+      test: ["CMD-SHELL", "nc -z localhost 2181"]
       interval: 10s
       timeout: 5s
-      retries: 5
+      retries: 10
+
+  kafka:
+    image: confluentinc/cp-kafka:7.3.0
+    container_name: railconnect-kafka
+    restart: unless-stopped
+    depends_on:
+      zookeeper:
+        condition: service_healthy
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+    ports:
+      - "29092:29092"
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z localhost 9092"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
 
   auth-service:
     build:
@@ -63,6 +87,7 @@ services:
       DB_NAME: railconnect
       DB_USER: postgres
       DB_PASS: postgres
+      SPRING_MAIN_ALLOW_BEAN_DEFINITION_OVERRIDING: "true"
       REDIS_HOST: redis
       REDIS_PORT: 6379
       JWT_SECRET: ${JWT_SECRET:-404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970}
@@ -70,6 +95,36 @@ services:
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-your-google-client-secret}
     ports:
       - "8081:8081"
+
+  api-gateway:
+    build:
+      context: .
+      dockerfile: api-gateway/Dockerfile
+    container_name: api-gateway
+    restart: unless-stopped
+    depends_on:
+      auth-service:
+        condition: service_started
+      booking-service:
+        condition: service_started
+      inventory-service:
+        condition: service_started
+      payment-service:
+        condition: service_started
+      tracking-service:
+        condition: service_started
+      notification-service:
+        condition: service_started
+    environment:
+      AUTH_SERVICE_URI: http://auth-service:8081
+      BOOKING_SERVICE_URI: http://booking-service:8082
+      INVENTORY_SERVICE_URI: http://inventory-service:8083
+      PAYMENT_SERVICE_URI: http://payment-service:8084
+      TRACKING_SERVICE_URI: http://tracking-service:8085
+      TRACKING_WEBSOCKET_URI: ws://tracking-service:8085
+      NOTIFICATION_SERVICE_URI: http://notification-service:8086
+    ports:
+      - "8080:8080"
 
   booking-service:
     build:
@@ -82,7 +137,7 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-      rabbitmq:
+      kafka:
         condition: service_healthy
     environment:
       DB_HOST: postgres
@@ -90,10 +145,10 @@ services:
       DB_NAME: railconnect
       DB_USER: postgres
       DB_PASS: postgres
+      SPRING_MAIN_ALLOW_BEAN_DEFINITION_OVERRIDING: "true"
       REDIS_HOST: redis
       REDIS_PORT: 6379
-      RABBITMQ_HOST: rabbitmq
-      RABBITMQ_PORT: 5672
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
       JWT_SECRET: ${JWT_SECRET:-404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970}
     ports:
       - "8082:8082"
@@ -115,6 +170,7 @@ services:
       DB_NAME: railconnect
       DB_USER: postgres
       DB_PASS: postgres
+      SPRING_MAIN_ALLOW_BEAN_DEFINITION_OVERRIDING: "true"
       REDIS_HOST: redis
       REDIS_PORT: 6379
       JWT_SECRET: ${JWT_SECRET:-404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970}
@@ -132,7 +188,7 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-      rabbitmq:
+      kafka:
         condition: service_healthy
     environment:
       DB_HOST: postgres
@@ -140,10 +196,10 @@ services:
       DB_NAME: railconnect
       DB_USER: postgres
       DB_PASS: postgres
+      SPRING_MAIN_ALLOW_BEAN_DEFINITION_OVERRIDING: "true"
       REDIS_HOST: redis
       REDIS_PORT: 6379
-      RABBITMQ_HOST: rabbitmq
-      RABBITMQ_PORT: 5672
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
       JWT_SECRET: ${JWT_SECRET:-404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970}
       RAZORPAY_KEY_ID: ${RAZORPAY_KEY_ID:-rzp_test_key}
       RAZORPAY_KEY_SECRET: ${RAZORPAY_KEY_SECRET:-key_secret}
@@ -167,6 +223,7 @@ services:
       DB_NAME: railconnect
       DB_USER: postgres
       DB_PASS: postgres
+      SPRING_MAIN_ALLOW_BEAN_DEFINITION_OVERRIDING: "true"
       REDIS_HOST: redis
       REDIS_PORT: 6379
       JWT_SECRET: ${JWT_SECRET:-404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970}
@@ -185,7 +242,7 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-      rabbitmq:
+      kafka:
         condition: service_healthy
     environment:
       DB_HOST: postgres
@@ -193,10 +250,10 @@ services:
       DB_NAME: railconnect
       DB_USER: postgres
       DB_PASS: postgres
+      SPRING_MAIN_ALLOW_BEAN_DEFINITION_OVERRIDING: "true"
       REDIS_HOST: redis
       REDIS_PORT: 6379
-      RABBITMQ_HOST: rabbitmq
-      RABBITMQ_PORT: 5672
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
       JWT_SECRET: ${JWT_SECRET:-404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970}
       MAIL_HOST: ${MAIL_HOST:-smtp.gmail.com}
       MAIL_USER: ${MAIL_USER:-noreply@railconnect.in}
