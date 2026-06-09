@@ -1,6 +1,6 @@
-# 🚂 RailConnect — Advanced Train Booking System
+# 🚂 RailConnect — Advanced Train Booking System (Microservices)
 
-> Enterprise-grade Spring Boot + PostgreSQL train booking platform inspired by IRCTC, with advanced features including real-time GPS tracking, Tatkal/Premium Tatkal, waitlist management, and multi-payment support.
+> Enterprise-grade train booking platform inspired by IRCTC, built on a highly scalable Spring Boot Microservices architecture. Features real-time GPS tracking, Tatkal/Premium Tatkal booking, asynchronous messaging via Kafka, waitlist management, and multi-payment support.
 
 ---
 
@@ -8,227 +8,121 @@
 
 | Feature | Details |
 |---|---|
-| 🔐 Authentication | JWT + Google OAuth2, BCrypt passwords, account lockout |
-| 🔍 Train Search | Multi-station search, flexible dates, class filtering |
-| 🎫 Booking | General / Tatkal / Premium Tatkal / Ladies / Senior Citizen quotas |
-| 💺 Seat Management | Optimistic locking (`@Version`), pessimistic lock on booking, RAC, Waitlist auto-promotion |
-| 💰 Payment | Razorpay integration — GPay UPI intent, PhonePe UPI intent, Credit/Debit Cards |
-| 🗺️ Live Tracking | WebSocket (STOMP) real-time GPS, Google Maps embed, 30-second broadcast |
-| ❌ Cancellation | Partial / full cancellation, automatic refund via Razorpay, cancellation charge matrix |
-| 📋 PNR Status | Real-time PNR check with passenger seat/status details |
-| 📧 Notifications | HTML email: booking confirmation, cancellation, waitlist upgrade |
-| 🛡️ Security | Rate limiting (Bucket4j), CORS, HTTPS-ready, audit log table |
-| 📊 Admin Panel | Dashboard stats, train/user management, manual seat seeding |
-| 📖 API Docs | Swagger UI at `/swagger-ui.html`, OpenAPI 3.0 |
+| 🔐 Authentication | JWT + Google OAuth2, BCrypt passwords, account lockout via `auth-service` |
+| 🔍 Train Search | Multi-station search, flexible dates, class filtering via `inventory-service` |
+| 🎫 Booking | General / Tatkal / Premium Tatkal quotas with concurrency control in `booking-service` |
+| 💺 Seat Management | Optimistic locking (`@Version`) + pessimistic locks, RAC, and Waitlist auto-promotion |
+| 💰 Payment | Razorpay integration — UPI intent (GPay/PhonePe) & cards via `payment-service` |
+| 🗺️ Live Tracking | WebSocket (STOMP) real-time GPS, Google Maps embed, 30s broadcast via `tracking-service` |
+| 📧 Notifications | Asynchronous HTML email confirmations & waitlist updates via Kafka + `notification-service` |
+| 🛡️ Security | API Gateway routing, CORS config, rate limiting (Bucket4j), audit logging |
+| 📊 Front-End UI | Modern React dashboard running at `http://localhost:3000` |
 
 ---
 
-## 🏗️ Architecture
+## 🏗️ Architecture & Modules
 
 ```
-┌─────────────────────────────────────────────────────────┐
-│                    RailConnect Backend                   │
-│                                                         │
-│  Spring Boot 3.2  │  Spring Security  │  Spring Data JPA│
-│  JWT + OAuth2     │  WebSocket STOMP  │  Flyway          │
-│  Redis Cache      │  Razorpay SDK     │  Bucket4j        │
-└─────────────────────────────────────────────────────────┘
-         │                    │                  │
-    PostgreSQL 16         Redis 7          Razorpay API
-    (Primary DB)          (Cache)          (GPay/PhonePe/Cards)
+                        ┌────────────────────────┐
+                        │     React Frontend     │
+                        │ (localhost:3000 / Vite)│
+                        └───────────┬────────────┘
+                                    │
+                        ┌───────────▼────────────┐
+                        │      API Gateway       │ (Port 8080)
+                        └───────────┬────────────┘
+                                    │ (Routing & Rate Limiting)
+       ┌────────────────────────────┼────────────────────────────┐
+┌──────▼──────┐              ┌──────▼──────┐              ┌──────▼──────┐
+│auth-service │ (Port 8081)  │booking-serv.│ (Port 8082)  │invent.-serv.│ (Port 8083)
+└──────┬──────┘              └──────┬──────┘              └──────┬──────┘
+       │                            │                            │
+       └──────────────┬─────────────┴─────────────┬──────────────┘
+                      │                           │
+              ┌──────▼──────┐             ┌──────▼──────┐
+              │payment-serv.│ (Port 8084) │tracking-ser.│ (Port 8085)
+              └──────┬──────┘             └──────┬──────┘
+                     │ (Kafka Events)            │
+              ┌──────▼──────┐                    │
+              │notific.-ser.│ (Port 8086)        │
+              └─────────────┘                    │
+                                                 │
+ ┌───────────────────────────────────────────────┼───────────────────────────────┐
+ │                                               │                               │
+┌▼──────────┐                               ┌────▼─────┐                    ┌────▼─────┐
+│ PostgreSQL│ (Port 5433)                   │  Redis   │ (Port 6379)        │  Kafka   │ (Port 29092)
+└───────────┘                               └──────────┘                    └──────────┘
 ```
+
+This project is organized as a Maven Multi-Module Reactor project:
+- **`railconnect-common`**: Shared models, utilities, DTOs, and global configurations.
+- **`api-gateway`**: Routes HTTP/WebSocket traffic and enforces JWT validation & security checks.
+- **`auth-service`**: Manages credentials, tokens, registration, and locking.
+- **`booking-service`**: Drives the core ticketing, quota management, and waitlists.
+- **`inventory-service`**: Seeds and displays seat availability and train searches.
+- **`payment-service`**: Integrates payments via Razorpay API and fires success hooks.
+- **`tracking-service`**: Handles WS STOMP updates and coordinates GPS maps tracking.
+- **`notification-service`**: Listens to Kafka messages to send HTML booking emails.
+- **`frontend`**: Modern React single-page application.
 
 ---
 
-## 🚀 Quick Start
+## 🚀 Quick Start (Running Locally)
 
 ### Prerequisites
-- Java 21+
-- Docker & Docker Compose
-- PostgreSQL 16 (or use Docker)
-- Redis 7 (or use Docker)
+- Java 21+ (OpenJDK 25.0.2 recommended)
+- Maven 3.9+
+- Node.js (for React frontend)
+- Docker Desktop (for Postgres, Redis, Zookeeper, and Kafka)
 
-### 1. Clone & Configure
+### 1. Configure Environment Variables
+Copy the `.env.example` file to `.env` in the root directory and update it with your credentials:
 ```bash
-git clone https://github.com/YOUR_USERNAME/railconnect.git
-cd railconnect
 cp .env.example .env
-# Edit .env with your API keys
 ```
 
-### 2. Run with Docker Compose (Recommended)
+### 2. Launch Infrastructure
+Start PostgreSQL, Redis, Kafka, and Zookeeper using Docker Compose:
 ```bash
 docker-compose up -d
 ```
-App starts at **http://localhost:8080**
 
-### 3. Run Locally
-```bash
-# Start dependencies
-docker-compose up -d postgres redis
-
-# Run the app
-./mvnw spring-boot:run -Dspring-boot.run.profiles=dev
+### 3. Initialize Database
+Initialize the database tables and seed them with trains, stations, and seat quotas:
+```cmd
+# Runs Flyway V1 Schema + V2 Seeds
+.\setup_db.cmd
 ```
+
+### 4. Build and Package Services
+Compile the multi-module Maven reactor project:
+```powershell
+.\build.ps1
+```
+
+### 5. Launch Services & Frontend
+Start all the microservices in the correct order:
+```powershell
+.\start_services.ps1
+```
+In a separate terminal, launch the React development frontend:
+```powershell
+.\start_frontend.ps1
+```
+Once everything is up, open **[http://localhost:3000](http://localhost:3000)** in your browser!
 
 ---
 
-## 🔑 API Keys Required
+## 📡 Ports Directory
 
-| Key | Where to Get |
-|---|---|
-| `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | [Google Cloud Console](https://console.cloud.google.com) → OAuth 2.0 |
-| `RAZORPAY_KEY_ID` / `RAZORPAY_KEY_SECRET` | [Razorpay Dashboard](https://dashboard.razorpay.com) |
-| `GOOGLE_MAPS_API_KEY` | [Google Cloud Console](https://console.cloud.google.com) → Maps JavaScript API |
-| `JWT_SECRET` | Generate: `openssl rand -base64 32` |
-
----
-
-## 📡 Key API Endpoints
-
-### Authentication
-```
-POST /api/v1/auth/register      - Register new user
-POST /api/v1/auth/login         - Login → JWT tokens
-POST /api/v1/auth/refresh       - Refresh access token
-GET  /oauth2/authorization/google - Google OAuth2 login
-```
-
-### Trains
-```
-GET  /api/v1/trains/search                         - Search trains
-GET  /api/v1/trains/{id}/availability?date=&class= - Seat availability
-GET  /api/v1/trains/{number}/live-status           - Live GPS status
-GET  /api/v1/trains/stations/search?query=         - Station autocomplete
-```
-
-### Bookings
-```
-POST /api/v1/bookings           - Create booking
-GET  /api/v1/bookings/pnr/{pnr} - PNR status check
-GET  /api/v1/bookings/my-bookings - User's bookings
-POST /api/v1/bookings/cancel    - Cancel booking
-```
-
-### Payments
-```
-POST /api/v1/payments/initiate  - Create Razorpay order (returns UPI intent URLs)
-POST /api/v1/payments/verify    - Verify payment signature
-POST /api/v1/payments/webhook   - Razorpay webhook
-```
-
-### WebSocket (Live Tracking)
-```
-WS   /ws                              - STOMP endpoint (SockJS)
-SUB  /topic/train/{trainNumber}       - Subscribe for live GPS updates
-PUB  /app/track/{trainNumber}/request - Request immediate update
-```
-
----
-
-## 💳 Payment Flow (GPay / PhonePe / Cards)
-
-```
-1. POST /api/v1/payments/initiate
-   → Returns { razorpayOrderId, upiIntentUrl }
-   
-2a. [GPay / PhonePe] Redirect user to upiIntentUrl  
-    gpay://upi/pay?pa=railconnect@razorpay&...
-    phonepe://pay?pa=railconnect@razorpay&...
-
-2b. [Cards] Use Razorpay JS SDK with razorpayOrderId
-
-3. POST /api/v1/payments/verify
-   { razorpayOrderId, razorpayPaymentId, razorpaySignature }
-   → Signature verified server-side (HMAC-SHA256)
-   → Booking confirmed + email sent
-```
-
----
-
-## 🗺️ Live Train Tracking Flow
-
-```
-Frontend                    Backend                  WebSocket
-   │                           │                        │
-   │── GET /live-status ───────►│                        │
-   │◄─ Initial position ────────│                        │
-   │                           │                        │
-   │── WS Connect /ws ─────────────────────────────────►│
-   │── Subscribe /topic/train/12301 ───────────────────►│
-   │                           │                        │
-   │                    Scheduler (30s)                  │
-   │                           │── Broadcast GPS ───────►│
-   │◄────────────── Live update (lat/lng/speed/delay) ───│
-```
-
----
-
-## 🎫 Tatkal Booking Rules (Implemented)
-
-| Quota | Opens | Charges |
-|---|---|---|
-| General | 120 days before | Base fare |
-| Tatkal | 10:00 AM, 1 day before | Base + tatkal charge |
-| Premium Tatkal | 11:00 AM, 1 day before | Base + 1.3× tatkal charge |
-
----
-
-## 🗃️ Database Schema Highlights
-
-- **Optimistic locking** (`version` column on `seats`) prevents double-booking
-- **Pessimistic write lock** on `findAvailableSeatsWithLock` for the critical booking path
-- **Automatic waitlist promotion** when a confirmed booking is cancelled
-- **Flyway migrations** for schema versioning (V1 = schema, V2 = seed data)
-- **Audit log** table for all user actions
-- **pg_trgm** extension for fuzzy station name search
-
----
-
-## 🧪 Testing
-
-```bash
-./mvnw test
-```
-
----
-
-## 📁 Project Structure
-
-```
-railconnect/
-├── src/main/java/com/railconnect/
-│   ├── config/          # Security, Redis, WebSocket, Razorpay, OpenAPI
-│   ├── controller/      # Auth, Train, Booking, Payment, Admin, User
-│   ├── dto/             # Request/Response DTOs
-│   ├── entity/          # JPA entities
-│   ├── enums/           # BookingStatus, SeatClass, QuotaType, etc.
-│   ├── exception/       # Global exception handler
-│   ├── repository/      # Spring Data JPA repositories
-│   ├── security/        # JWT, OAuth2, UserDetails
-│   ├── service/         # Business logic
-│   ├── util/            # FareCalculator, PnrGenerator
-│   └── websocket/       # STOMP controllers
-├── src/main/resources/
-│   ├── application.yml
-│   └── db/migration/    # Flyway V1 schema + V2 seed data
-├── docker-compose.yml
-├── Dockerfile
-└── .env.example
-```
-
----
-
-## 🛡️ Security Features
-
-- JWT with 24h expiry + 7-day refresh tokens
-- Account lockout after 5 failed login attempts (30-min lock)
-- Rate limiting: 100 requests/minute per IP (Bucket4j)
-- HMAC-SHA256 Razorpay signature verification
-- `@PreAuthorize` on all admin endpoints
-- `@Version` optimistic locking on seats
-- CORS configured (update allowed origins for production)
-
----
-
-*Built with ❤️ | RailConnect © 2026*
+- `3000` — Frontend (React/Vite)
+- `8080` — API Gateway
+- `8081` — Auth Service
+- `8082` — Booking Service
+- `8083` — Inventory Service
+- `8084` — Payment Service
+- `8085` — Tracking Service
+- `8086` — Notification Service
+- `5433` — PostgreSQL DB
+- `6379` — Redis Cache
+- `29092` — Kafka Broker
