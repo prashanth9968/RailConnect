@@ -18,6 +18,7 @@
 
     <properties>
         <java.version>21</java.version>
+        <flyway.version>10.20.1</flyway.version>
         <lombok.version>1.18.46</lombok.version>
         <jjwt.version>0.12.5</jjwt.version>
         <mapstruct.version>1.5.5.Final</mapstruct.version>
@@ -38,14 +39,12 @@
 
     <dependencyManagement>
         <dependencies>
-            <!-- Shared Common Library -->
             <dependency>
                 <groupId>com.railconnect</groupId>
                 <artifactId>railconnect-common</artifactId>
                 <version>${railconnect.version}</version>
             </dependency>
 
-            <!-- JWT -->
             <dependency>
                 <groupId>io.jsonwebtoken</groupId>
                 <artifactId>jjwt-api</artifactId>
@@ -64,7 +63,12 @@
                 <scope>runtime</scope>
             </dependency>
 
-            <!-- Mapstruct -->
+            <dependency>
+                <groupId>org.flywaydb</groupId>
+                <artifactId>flyway-database-postgresql</artifactId>
+                <version>${flyway.version}</version>
+            </dependency>
+
             <dependency>
                 <groupId>org.mapstruct</groupId>
                 <artifactId>mapstruct</artifactId>
@@ -77,7 +81,6 @@
                 <scope>provided</scope>
             </dependency>
 
-            <!-- ZXing QR Code -->
             <dependency>
                 <groupId>com.google.zxing</groupId>
                 <artifactId>core</artifactId>
@@ -89,7 +92,6 @@
                 <version>${zxing.version}</version>
             </dependency>
 
-            <!-- Integrations -->
             <dependency>
                 <groupId>com.razorpay</groupId>
                 <artifactId>razorpay-java</artifactId>
