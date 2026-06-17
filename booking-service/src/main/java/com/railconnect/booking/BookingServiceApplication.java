@@ -7,9 +7,12 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
+import org.springframework.cloud.openfeign.EnableFeignClients;
+
 @SpringBootApplication(scanBasePackages = "com.railconnect")
 @EntityScan(basePackages = "com.railconnect.entity")
 @EnableJpaRepositories(basePackages = "com.railconnect.repository")
+@EnableFeignClients(basePackages = "com.railconnect")
 @EnableCaching
 @EnableScheduling
 public class BookingServiceApplication {

@@ -39,15 +39,21 @@ public class User {
     private String profilePicture;
 
     @Enumerated(EnumType.STRING)
+    @Builder.Default
     private UserRole role = UserRole.ROLE_USER;
 
     @Enumerated(EnumType.STRING)
+    @Builder.Default
     private AuthProvider provider = AuthProvider.LOCAL;
 
     private String providerId;
     private boolean emailVerified = false;
     private boolean phoneVerified = false;
+
+    @Builder.Default
     private boolean enabled = true;
+
+    @Builder.Default
     private boolean accountNonLocked = true;
     private int failedLoginAttempts = 0;
     private LocalDateTime lockTime;

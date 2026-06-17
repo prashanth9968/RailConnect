@@ -2,6 +2,9 @@ spring:
   application:
     name: tracking-service
 
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:29092}
+
   datasource:
     url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:railconnect}
     username: ${DB_USER:postgres}
@@ -42,3 +45,6 @@ logging:
   level:
     com.railconnect: INFO
     org.springframework.security: WARN
+
+tracking:
+  provider: ${TRACKING_PROVIDER:simulated}

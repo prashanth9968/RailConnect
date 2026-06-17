@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { bookingsAPI, paymentsAPI } from '../services/api';
+import { toast } from 'react-hot-toast';
 import './BookingPage.css';
 
 const CLASS_NAMES = {
@@ -72,8 +73,11 @@ export default function BookingPage() {
       });
       setBooking(res.data.data);
       setStep(2);
+      toast.success('Passenger details saved.');
     } catch (err) {
-      setError(err.response?.data?.message || 'Booking initiation failed. Please try again.');
+      const msg = err.response?.data?.message || 'Booking initiation failed. Please try again.';
+      setError(msg);
+      toast.error(msg);
     } finally { setLoading(false); }
   };
 
@@ -85,7 +89,9 @@ export default function BookingPage() {
       setPayment(res.data.data);
       setStep(3);
     } catch (err) {
-      setError(err.response?.data?.message || 'Payment initiation failed.');
+      const msg = err.response?.data?.message || 'Payment initiation failed.';
+      setError(msg);
+      toast.error(msg);
     } finally { setLoading(false); }
   };
 
@@ -102,7 +108,9 @@ export default function BookingPage() {
       });
       navigate('/my-bookings', { state: { success: true } });
     } catch (err) {
-      setError(err.response?.data?.message || 'Payment verification failed.');
+      const msg = err.response?.data?.message || 'Payment verification failed.';
+      setError(msg);
+      toast.error(msg);
     } finally { setLoading(false); }
   };
 

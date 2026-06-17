@@ -17,13 +17,19 @@ import java.util.UUID;
 public interface TrainAvailabilityRepository extends JpaRepository<TrainAvailability, UUID> {
 
     Optional<TrainAvailability> findByTrainIdAndJourneyDateAndClassTypeAndQuotaType(
-        UUID trainId, LocalDate journeyDate, ClassType classType, QuotaType quotaType);
+        Long trainId, LocalDate journeyDate, ClassType classType, QuotaType quotaType);
 
-    List<TrainAvailability> findByTrainIdAndJourneyDate(UUID trainId, LocalDate journeyDate);
+    List<TrainAvailability> findByTrainIdAndJourneyDate(Long trainId, LocalDate journeyDate);
 
     @Modifying
     @Query("UPDATE TrainAvailability a SET a.availableSeats = a.availableSeats - :count WHERE a.train.id = :trainId AND a.journeyDate = :date AND a.classType = :classType AND a.quotaType = :quotaType AND a.availableSeats >= :count")
-    int decrementAvailability(@Param("trainId") UUID trainId, @Param("date") LocalDate date,
+    int decrementAvailability(@Param("trainId") Long trainId, @Param("date") LocalDate date,
+                               @Param("classType") ClassType classType, @Param("quotaType") QuotaType quotaType,
+                               @Param("count") int count);
+
+    @Modifying
+    @Query("UPDATE TrainAvailability a SET a.availableSeats = a.availableSeats + :count WHERE a.train.id = :trainId AND a.journeyDate = :date AND a.classType = :classType AND a.quotaType = :quotaType AND a.availableSeats + :count <= a.totalSeats")
+    int incrementAvailability(@Param("trainId") Long trainId, @Param("date") LocalDate date,
                                @Param("classType") ClassType classType, @Param("quotaType") QuotaType quotaType,
                                @Param("count") int count);
 }

@@ -1,11 +1,16 @@
 package com.railconnect.service;
 
 import com.railconnect.entity.*;
+import com.railconnect.enums.SeatClass;
 import com.railconnect.enums.SeatStatus;
+import com.railconnect.enums.ClassType;
+import com.railconnect.enums.QuotaType;
+import com.railconnect.exception.RailConnectException;
 import com.railconnect.repository.*;
+import com.railconnect.util.OccupancyCalculator;
+import com.railconnect.util.FareCalculator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,50 +24,114 @@ public class SeatSeederService {
 
     private final TrainRepository trainRepository;
     private final SeatRepository seatRepository;
+    private final TrainAvailabilityRepository trainAvailabilityRepository;
+    private final FareCalculator fareCalculator;
 
     /**
-     * Every day at 00:30, pre-create seat rows for 120 days ahead.
-     * This is required so availability queries work without dynamic seat creation.
+     * Generates physical seat records in the database for the coaches of a train on a given date on demand,
+     * ensuring that availability counts align exactly with the TrainAvailability configuration.
      */
-    @Scheduled(cron = "0 30 0 * * *")
     @Transactional
-    public void seedSeatsForFutureDates() {
-        LocalDate target = LocalDate.now().plusDays(120);
-        log.info("Seeding seats for date: {}", target);
+    public void ensureSeatsGenerated(Long trainId, LocalDate date) {
+        Train train = trainRepository.findById(trainId)
+                .orElseThrow(() -> new RailConnectException("Train not found", org.springframework.http.HttpStatus.NOT_FOUND));
 
-        List<Train> trains = trainRepository.findAll();
+        if (train.getCoaches().isEmpty()) return;
+
+        // Check if seats already exist for this train and date (using the first coach)
+        TrainCoach firstCoach = train.getCoaches().get(0);
+        List<Seat> existing = seatRepository.findByCoachAndDate(firstCoach.getId(), date);
+        if (!existing.isEmpty()) {
+            return; // Already generated
+        }
+
+        log.info("Generating seats on demand for train {} on date {}", train.getTrainNumber(), date);
         List<Seat> toSave = new ArrayList<>();
 
-        for (Train train : trains) {
-            for (TrainCoach coach : train.getCoaches()) {
-                // Check if already seeded
-                List<Seat> existing = seatRepository.findByCoachAndDate(coach.getId(), target);
-                if (!existing.isEmpty()) continue;
+        for (TrainCoach coach : train.getCoaches()) {
+            ClassType classType = mapToClassType(coach.getSeatClass());
+            Optional<TrainAvailability> taOpt = trainAvailabilityRepository
+                    .findByTrainIdAndJourneyDateAndClassTypeAndQuotaType(trainId, date, classType, QuotaType.GENERAL);
 
-                for (int i = 1; i <= coach.getTotalSeats(); i++) {
-                    String berthType = getBerthType(coach.getSeatClass().name(), i);
-                    toSave.add(Seat.builder()
+            int totalSeats = coach.getTotalSeats();
+            int availableSeats = totalSeats;
+
+            if (taOpt.isPresent()) {
+                TrainAvailability ta = taOpt.get();
+                double availableRatio = (double) ta.getAvailableSeats() / ta.getTotalSeats();
+                availableSeats = (int) Math.round(totalSeats * availableRatio);
+            } else {
+                // Generate availability record lazily if missing
+                double occupancy = OccupancyCalculator.calculateOccupancy(train.getTrainType(), date);
+                availableSeats = totalSeats - (int) Math.round(totalSeats * occupancy);
+
+                TrainAvailability ta = TrainAvailability.builder()
+                        .train(train)
+                        .journeyDate(date)
+                        .classType(classType)
+                        .quotaType(QuotaType.GENERAL)
+                        .totalSeats(totalSeats)
+                        .availableSeats(availableSeats)
+                        .baseFare(fareCalculator.calculateBaseFare(coach.getSeatClass(), 500, 1))
+                        .tatkalFare(fareCalculator.calculateTatkalCharge(coach.getSeatClass(), 500, 1))
+                        .build();
+                trainAvailabilityRepository.save(ta);
+            }
+
+            // Create seat rows, randomizing which ones are booked to match availability count
+            List<Integer> seatIndexes = new ArrayList<>();
+            for (int i = 1; i <= totalSeats; i++) {
+                seatIndexes.add(i);
+            }
+            Collections.shuffle(seatIndexes);
+
+            Set<Integer> bookedSeats = new HashSet<>();
+            int bookedCount = totalSeats - availableSeats;
+            for (int i = 0; i < bookedCount && i < seatIndexes.size(); i++) {
+                bookedSeats.add(seatIndexes.get(i));
+            }
+
+            for (int i = 1; i <= totalSeats; i++) {
+                String berthType = getBerthType(coach.getSeatClass().name(), i);
+                SeatStatus status = bookedSeats.contains(i) ? SeatStatus.BOOKED : SeatStatus.AVAILABLE;
+
+                toSave.add(Seat.builder()
                         .coach(coach)
                         .seatNumber(String.valueOf(i))
                         .berthType(berthType)
-                        .status(SeatStatus.AVAILABLE)
-                        .journeyDate(target)
+                        .status(status)
+                        .journeyDate(date)
                         .build());
-                }
             }
         }
 
         if (!toSave.isEmpty()) {
             seatRepository.saveAll(toSave);
-            log.info("Seeded {} seats for {}", toSave.size(), target);
+            log.info("Successfully generated {} seats for train {} on date {}", toSave.size(), train.getTrainNumber(), date);
         }
+    }
+
+    private ClassType mapToClassType(SeatClass seatClass) {
+        return switch (seatClass) {
+            case SL -> ClassType.SL;
+            case S3 -> ClassType.THIRD_AC;
+            case S2 -> ClassType.SECOND_AC;
+            case S1 -> ClassType.FIRST_AC;
+            case CC -> ClassType.AC_CHAIR_CAR;
+            case EC -> ClassType.EXECUTIVE_CHAIR;
+            default -> ClassType.SECOND_SEATING;
+        };
+    }
+
+    public void seedSeatsForFutureDates() {
+        log.info("Manual seat seeding triggered (No-op since dynamic lazy generation is active).");
     }
 
     private String getBerthType(String seatClass, int seatNum) {
         if (seatClass.equals("GN") || seatClass.equals("CC") || seatClass.equals("EC")) {
             return seatNum % 2 == 0 ? "WINDOW" : "AISLE";
         }
-        // For sleeper / AC coaches: 8 seats per bay (1-6 main, 7-8 side)
+        // sleeper / AC coaches: 8 seats per bay (1-6 main, 7-8 side)
         int posInBay = ((seatNum - 1) % 8) + 1;
         return switch (posInBay) {
             case 1, 4 -> "LOWER";

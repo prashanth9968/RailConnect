@@ -6,6 +6,9 @@ import org.springframework.data.redis.cache.*;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.serializer.*;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.fasterxml.jackson.databind.jsontype.impl.LaissezFaireSubTypeValidator;
 
 import java.time.Duration;
 
@@ -13,12 +16,24 @@ import java.time.Duration;
 @EnableCaching
 public class CacheConfig {
 
+    private RedisSerializer<Object> jacksonSerializer() {
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.registerModule(new JavaTimeModule());
+        mapper.activateDefaultTyping(
+            LaissezFaireSubTypeValidator.instance,
+            ObjectMapper.DefaultTyping.EVERYTHING,
+            com.fasterxml.jackson.annotation.JsonTypeInfo.As.PROPERTY
+        );
+        return new GenericJackson2JsonRedisSerializer(mapper);
+    }
+
     @Bean
     public RedisCacheManager cacheManager(RedisConnectionFactory connectionFactory) {
+        RedisSerializer<Object> serializer = jacksonSerializer();
         RedisCacheConfiguration defaultConfig = RedisCacheConfiguration.defaultCacheConfig()
             .entryTtl(Duration.ofMinutes(10))
             .serializeValuesWith(RedisSerializationContext.SerializationPair
-                .fromSerializer(new GenericJackson2JsonRedisSerializer()));
+                .fromSerializer(serializer));
 
         return RedisCacheManager.builder(connectionFactory)
             .cacheDefaults(defaultConfig)
@@ -33,7 +48,7 @@ public class CacheConfig {
         RedisTemplate<String, Object> template = new RedisTemplate<>();
         template.setConnectionFactory(connectionFactory);
         template.setKeySerializer(new StringRedisSerializer());
-        template.setValueSerializer(new GenericJackson2JsonRedisSerializer());
+        template.setValueSerializer(jacksonSerializer());
         return template;
     }
 }

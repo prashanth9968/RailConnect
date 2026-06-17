@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { trainsAPI } from '../services/api';
+import StationAutocomplete from '../components/StationAutocomplete';
 import './SearchPage.css';
 
 const CLASS_LABELS = {
-  SLEEPER: { label: 'SL', name: 'Sleeper', color: '#6366f1' },
-  AC_3_TIER: { label: '3A', name: 'AC 3 Tier', color: '#8b5cf6' },
-  AC_2_TIER: { label: '2A', name: 'AC 2 Tier', color: '#06b6d4' },
+  SLEEPER: { label: 'SL', name: 'Sleeper', color: '#4f46e5' },
+  AC_3_TIER: { label: '3A', name: 'AC 3 Tier', color: '#7c3aed' },
+  AC_2_TIER: { label: '2A', name: 'AC 2 Tier', color: '#0891b2' },
   AC_1_TIER: { label: '1A', name: 'AC First Class', color: '#f59e0b' },
   CHAIR_CAR: { label: 'CC', name: 'Chair Car', color: '#10b981' },
   EXECUTIVE: { label: 'EC', name: 'Executive', color: '#ef4444' },
@@ -15,14 +16,14 @@ const CLASS_LABELS = {
 function AvailBadge({ avail }) {
   if (!avail) return null;
   const { availableSeats, status } = avail;
-  if (status === 'AVAILABLE')
-    return <span className="badge badge-success">✓ {availableSeats} Avail</span>;
-  if (status === 'WAITING')
-    return <span className="badge badge-warning">WL {avail.waitingListCount}</span>;
-  return <span className="badge badge-danger">RAC</span>;
+  if (status === 'AVAILABLE' || availableSeats > 0)
+    return <span className="badge badge-success">✓ {availableSeats} Available</span>;
+  if (status === 'RAC')
+    return <span className="badge badge-warning">RAC {availableSeats}</span>;
+  return <span className="badge badge-danger">WL {avail.waitingListCount || 0}</span>;
 }
 
-function TrainCard({ train, date, onBook }) {
+function TrainCard({ train, date, onBook, onViewRoute }) {
   const [expanded, setExpanded] = useState(false);
   const [avail, setAvail] = useState(null);
   const [loadingAvail, setLoadingAvail] = useState(false);
@@ -44,14 +45,16 @@ function TrainCard({ train, date, onBook }) {
         <div className="train-info">
           <div className="train-number-badge">{train.trainNumber}</div>
           <div>
-            <div className="train-name">{train.trainName}</div>
+            <div className="train-name" onClick={() => onViewRoute(train)}>
+              {train.trainName}
+            </div>
             <div className="train-type">{train.trainType?.replace(/_/g, ' ')}</div>
           </div>
         </div>
         <div className="train-route">
           <div className="route-time">
             <span className="time">{train.departureTime}</span>
-            <span className="station">{train.sourceStation}</span>
+            <span className="station">{train.sourceStationCode || train.sourceStation}</span>
           </div>
           <div className="route-duration">
             <div className="duration-line">
@@ -63,16 +66,21 @@ function TrainCard({ train, date, onBook }) {
           </div>
           <div className="route-time" style={{ textAlign: 'right' }}>
             <span className="time">{train.arrivalTime}</span>
-            <span className="station">{train.destinationStation}</span>
+            <span className="station">{train.destinationStationCode || train.destinationStation}</span>
           </div>
         </div>
         <div className="train-actions">
           <div className="train-runs">
             {train.runsOn?.join(', ') || 'Daily'}
           </div>
-          <button className="btn btn-secondary btn-sm" onClick={fetchAvail}>
-            {expanded ? '▲ Hide' : '▼ Check Seats'}
-          </button>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <button className="btn btn-ghost btn-sm" onClick={() => onViewRoute(train)}>
+              🗺️ Route
+            </button>
+            <button className="btn btn-secondary btn-sm" onClick={fetchAvail}>
+              {expanded ? '▲ Hide' : '▼ Check Seats'}
+            </button>
+          </div>
         </div>
       </div>
 
@@ -111,6 +119,80 @@ function TrainCard({ train, date, onBook }) {
   );
 }
 
+function TrainDetailsDrawer({ train, onClose, date }) {
+  const [schedule, setSchedule] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (train) fetchSchedule();
+  }, [train]);
+
+  const fetchSchedule = async () => {
+    setLoading(true);
+    try {
+      const res = await trainsAPI.getLiveStatus(train.trainNumber, date);
+      setSchedule(res.data.data.routeStatus || []);
+    } catch {
+      setSchedule([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (!train) return null;
+
+  return (
+    <div className="drawer-overlay" onClick={onClose}>
+      <div className="drawer-content" onClick={(e) => e.stopPropagation()}>
+        <div className="drawer-header">
+          <div>
+            <div className="drawer-train-num">{train.trainNumber}</div>
+            <h3 style={{ fontSize: '1.25rem' }}>{train.trainName}</h3>
+            <p className="drawer-train-type">{train.trainType?.replace(/_/g, ' ')}</p>
+          </div>
+          <button className="drawer-close-btn" onClick={onClose}>&times;</button>
+        </div>
+        <div className="drawer-body">
+          {loading ? (
+            <div className="drawer-loading">
+              <div className="spinner spinner-lg" />
+              <p style={{ marginTop: '12px' }}>Loading schedule...</p>
+            </div>
+          ) : schedule.length > 0 ? (
+            <div className="drawer-timeline">
+              <h4>Route & Timings</h4>
+              <div className="drawer-steps">
+                {schedule.map((s, idx) => (
+                  <div key={idx} className="drawer-step">
+                    <div className="ds-marker">
+                      <div className="ds-dot" />
+                      {idx < schedule.length - 1 && <div className="ds-line" />}
+                    </div>
+                    <div className="ds-content">
+                      <div className="ds-station">
+                        <span className="ds-code">{s.stationCode}</span>
+                        <span className="ds-name">{s.stationName}</span>
+                      </div>
+                      <div className="ds-times">
+                        {s.scheduledArrival ? `Arr: ${s.scheduledArrival}` : 'Origin'}
+                        {s.scheduledDeparture ? ` · Dep: ${s.scheduledDeparture}` : ' · Terminals'}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <div className="drawer-loading">
+              <p>No route schedule found for this train.</p>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function SearchPage() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -121,6 +203,7 @@ export default function SearchPage() {
   const [to, setTo] = useState(searchParams.get('to') || '');
   const [date, setDate] = useState(searchParams.get('date') || new Date().toISOString().split('T')[0]);
   const [sortBy, setSortBy] = useState('departure');
+  const [selectedTrainDetail, setSelectedTrainDetail] = useState(null);
 
   useEffect(() => {
     if (from && to && date) fetchTrains();
@@ -157,35 +240,31 @@ export default function SearchPage() {
   return (
     <div className="search-page page-enter">
       {/* Search Bar */}
-      <div className="search-bar-wrapper glass">
+      <div className="search-bar-wrapper">
         <div className="container">
           <form className="search-bar-form" onSubmit={handleSearch}>
-            <div className="sbar-group">
-              <label className="form-label">From</label>
-              <input
-                className="form-input"
+            <div style={{ flex: 1 }}>
+              <StationAutocomplete
+                label="From"
                 placeholder="Station code or name"
                 value={from}
-                onChange={(e) => setFrom(e.target.value.toUpperCase())}
-                required
+                onChange={setFrom}
               />
             </div>
             <button type="button" className="swap-btn-sm" onClick={swap}>⇄</button>
-            <div className="sbar-group">
-              <label className="form-label">To</label>
-              <input
-                className="form-input"
+            <div style={{ flex: 1 }}>
+              <StationAutocomplete
+                label="To"
                 placeholder="Station code or name"
                 value={to}
-                onChange={(e) => setTo(e.target.value.toUpperCase())}
-                required
+                onChange={setTo}
               />
             </div>
             <div className="sbar-group sbar-date">
               <label className="form-label">Date</label>
               <input type="date" className="form-input" value={date} min={today} onChange={(e) => setDate(e.target.value)} required />
             </div>
-            <button type="submit" className="btn btn-primary" disabled={loading}>
+            <button type="submit" className="btn btn-primary" style={{ height: '46px' }} disabled={loading}>
               {loading ? <span className="spinner" /> : '🔍 Search'}
             </button>
           </form>
@@ -199,8 +278,8 @@ export default function SearchPage() {
             <div className="results-info">
               <h2 className="results-title">
                 {from} → {to}
+                <span className="results-count">{trains.length} trains found</span>
               </h2>
-              <span className="results-count">{trains.length} trains found</span>
             </div>
             <div className="sort-options">
               <span className="sort-label">Sort by:</span>
@@ -210,11 +289,11 @@ export default function SearchPage() {
           </div>
         )}
 
-        {/* Loading */}
+        {/* Loading Skeletons */}
         {loading && (
           <div className="loading-state">
             {[1, 2, 3].map((n) => (
-              <div key={n} className="skeleton" style={{ height: '120px', borderRadius: 'var(--radius-lg)' }} />
+              <div key={n} className="skeleton" style={{ height: '140px', borderRadius: '20px' }} />
             ))}
           </div>
         )}
@@ -229,9 +308,9 @@ export default function SearchPage() {
         {/* Empty State */}
         {!loading && !error && trains.length === 0 && (from || to) && (
           <div className="empty-state">
-            <div className="empty-icon">🔍</div>
-            <h3>No trains found</h3>
-            <p>Try searching with a different date or stations.</p>
+            <div className="empty-icon">🚆</div>
+            <h3>No trains available</h3>
+            <p>Try searching with a different date or different stations.</p>
           </div>
         )}
 
@@ -248,11 +327,26 @@ export default function SearchPage() {
         {!loading && (
           <div className="train-list">
             {sortedTrains.map((train) => (
-              <TrainCard key={train.trainId} train={train} date={date} onBook={handleBook} />
+              <TrainCard
+                key={train.trainId}
+                train={train}
+                date={date}
+                onBook={handleBook}
+                onViewRoute={setSelectedTrainDetail}
+              />
             ))}
           </div>
         )}
       </div>
+
+      {/* Train Details Drawer */}
+      {selectedTrainDetail && (
+        <TrainDetailsDrawer
+          train={selectedTrainDetail}
+          date={date}
+          onClose={() => setSelectedTrainDetail(null)}
+        />
+      )}
     </div>
   );
 }

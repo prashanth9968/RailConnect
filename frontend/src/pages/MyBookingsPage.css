@@ -2,14 +2,18 @@
 .my-bookings-page { padding: 48px 0 80px; }
 
 .page-header { margin-bottom: 32px; }
-.page-header h1 { font-size: 2rem; }
-.page-subtitle { color: var(--color-text-muted); margin-top: 6px; }
+.page-header h1 { font-size: 2rem; font-weight: 800; color: var(--color-text); }
+.page-subtitle { color: var(--color-text-muted); margin-top: 6px; font-weight: 500; }
 
-.bookings-list { display: flex; flex-direction: column; gap: 16px; }
+.bookings-list { display: flex; flex-direction: column; gap: 20px; }
 
 .booking-item {
   overflow: hidden;
   padding: 0;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-sm);
+  background: var(--color-surface);
 }
 
 .booking-item-header {
@@ -17,7 +21,7 @@
   align-items: center;
   justify-content: space-between;
   padding: 16px 24px;
-  background: rgba(15,23,42,0.4);
+  background: var(--color-surface-2);
   border-bottom: 1px solid var(--color-border);
 }
 
@@ -27,44 +31,43 @@
   text-transform: uppercase; letter-spacing: 0.08em;
   color: var(--color-text-muted);
 }
-.pnr-number { font-family: var(--font-display); font-weight: 800; font-size: 1rem; color: var(--color-primary-light); }
+.pnr-number { font-family: var(--font-display); font-weight: 800; font-size: 1.05rem; color: var(--color-primary); }
 
 .booking-item-body { padding: 20px 24px; display: flex; flex-direction: column; gap: 20px; }
 
 .booking-route-info { display: flex; align-items: center; gap: 24px; flex-wrap: wrap; }
 
-.bi-train { min-width: 140px; }
-.bi-train-num { font-weight: 800; font-size: 0.9rem; color: var(--color-primary-light); }
-.bi-train-name { font-size: 0.875rem; color: var(--color-text-muted); margin-top: 2px; }
+.bi-train { min-width: 160px; }
+.bi-train-num { font-weight: 800; font-size: 0.9rem; color: var(--color-primary); }
+.bi-train-name { font-size: 0.875rem; color: var(--color-text-muted); margin-top: 2px; font-weight: 500; }
 
 .bi-journey { display: flex; align-items: center; gap: 16px; flex: 1; }
 .bi-station { display: flex; flex-direction: column; gap: 4px; }
-.bi-time { font-family: var(--font-display); font-size: 1.2rem; font-weight: 800; }
-.bi-code { font-size: 0.8rem; color: var(--color-text-muted); }
-.bi-arrow { font-size: 1.2rem; color: var(--color-primary); }
+.bi-time { font-family: var(--font-display); font-size: 1.25rem; font-weight: 800; color: var(--color-text); }
+.bi-code { font-size: 0.8rem; color: var(--color-text-muted); font-weight: 600; }
+.bi-arrow { font-size: 1.2rem; color: var(--color-text-muted); }
 
 .booking-meta {
   display: flex;
-  gap: 24px;
+  gap: 32px;
   flex-wrap: wrap;
+  border-top: 1px solid var(--color-border);
+  padding-top: 18px;
 }
 
 .meta-item { display: flex; flex-direction: column; gap: 3px; }
 .meta-label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--color-text-muted); font-weight: 600; }
-.meta-val { font-size: 0.9375rem; font-weight: 600; }
+.meta-val { font-size: 0.9375rem; font-weight: 700; color: var(--color-text-secondary); }
 
 .fare-highlight {
-  background: var(--gradient-primary);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  font-size: 1.1rem;
+  color: var(--color-primary);
+  font-size: 1.15rem;
   font-weight: 800;
 }
 
 .booking-item-footer {
-  padding: 12px 24px;
-  background: rgba(15,23,42,0.3);
+  padding: 14px 24px;
+  background: var(--color-surface-2);
   border-top: 1px solid var(--color-border);
   display: flex;
   justify-content: flex-end;
@@ -78,7 +81,7 @@
   margin-top: 32px;
 }
 
-.page-info { font-size: 0.875rem; color: var(--color-text-muted); }
+.page-info { font-size: 0.875rem; color: var(--color-text-secondary); font-weight: 600; }
 
 .empty-state {
   display: flex;
@@ -88,8 +91,21 @@
   padding: 80px 24px;
   text-align: center;
   gap: 12px;
+  background: var(--color-surface);
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-sm);
 }
 
-.empty-icon { font-size: 3.5rem; opacity: 0.7; }
-.empty-state h3 { font-size: 1.25rem; }
-.empty-state p { color: var(--color-text-muted); }
+.empty-icon { font-size: 3rem; }
+.empty-state h3 { font-size: 1.25rem; font-weight: 800; color: var(--color-text); }
+.empty-state p { color: var(--color-text-muted); font-size: 0.95rem; }
+
+@media (max-width: 768px) {
+  .booking-item-header { padding: 12px 16px; }
+  .booking-item-body { padding: 16px; }
+  .booking-route-info { gap: 16px; }
+  .bi-train { min-width: 100%; border-bottom: 1px dashed var(--color-border); padding-bottom: 8px; }
+  .bi-journey { min-width: 100%; }
+  .booking-meta { gap: 16px 24px; }
+}

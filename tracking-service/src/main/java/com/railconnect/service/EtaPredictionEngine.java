@@ -60,7 +60,10 @@ public class EtaPredictionEngine {
                     .actualDeparture(actualDeparture)
                     .delayMinutes(delay)
                     .status(status)
+                    .latitude(route.getStation().getLatitude())
+                    .longitude(route.getStation().getLongitude())
                     .build());
+
         }
 
         return routeStatusList;

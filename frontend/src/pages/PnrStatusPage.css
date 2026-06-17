@@ -1,13 +1,17 @@
 /* PnrStatusPage.css */
 .pnr-page { padding: 48px 0 80px; }
 
-.page-hero { margin-bottom: 32px; }
-.page-hero h1 { font-size: 2rem; margin-bottom: 8px; }
-.page-hero p { color: var(--color-text-muted); }
+.page-hero { margin-bottom: 24px; }
+.page-hero h1 { font-size: 2rem; margin-bottom: 8px; font-weight: 800; color: var(--color-text); }
+.page-hero p { color: var(--color-text-muted); font-size: 1rem; }
 
 .pnr-search-box {
-  padding: 28px;
+  padding: 24px;
   margin-bottom: 0;
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
 }
 
 .pnr-form {
@@ -23,7 +27,7 @@
   letter-spacing: 0.05em;
 }
 
-.pnr-result { display: flex; flex-direction: column; gap: 20px; margin-top: 28px; }
+.pnr-result { display: flex; flex-direction: column; gap: 20px; margin-top: 24px; }
 
 /* ── Status Banner ── */
 .pnr-status-banner {
@@ -34,40 +38,47 @@
   border-left: 4px solid var(--status-color, var(--color-primary));
   flex-wrap: wrap;
   gap: 20px;
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
 }
 
 .psb-left { display: flex; align-items: center; gap: 16px; }
 
 .psb-status-dot {
-  width: 16px; height: 16px;
+  width: 14px; height: 14px;
   border-radius: 50%;
   background: var(--status-color, var(--color-primary));
-  box-shadow: 0 0 12px var(--status-color, var(--color-primary));
+  box-shadow: 0 0 10px var(--status-color, var(--color-primary));
   flex-shrink: 0;
-  animation: pulse-glow 2s ease-in-out infinite;
+  animation: pulse-glow-pnr 2s ease-in-out infinite;
 }
 
-.psb-label { font-size: 0.75rem; color: var(--color-text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px; }
+.psb-label { font-size: 0.75rem; color: var(--color-text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px; font-weight: 600; }
 .psb-status { font-size: 1.25rem; font-weight: 800; color: var(--status-color, var(--color-primary)); }
 
 .psb-pnr { text-align: right; }
-.psb-value { font-family: var(--font-display); font-size: 1.5rem; font-weight: 800; }
+.psb-value { font-family: var(--font-display); font-size: 1.5rem; font-weight: 800; color: var(--color-text); }
 
 /* ── Journey ── */
 .pnr-details { padding: 24px; display: flex; flex-direction: column; gap: 24px; }
-.pnr-details h2 { font-size: 1.125rem; }
+.pnr-details h2 { font-size: 1.125rem; font-weight: 800; color: var(--color-text); border-bottom: 1px solid var(--color-border); padding-bottom: 8px; }
 
 .pnr-journey {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 24px;
+  background: var(--color-surface-2);
+  padding: 20px;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border);
 }
 
 .pnr-endpoint { display: flex; flex-direction: column; gap: 4px; min-width: 100px; }
 
-.pnr-time { font-family: var(--font-display); font-size: 1.75rem; font-weight: 800; }
-.pnr-station { font-size: 1rem; font-weight: 600; }
-.pnr-date { font-size: 0.8rem; color: var(--color-text-muted); }
+.pnr-time { font-family: var(--font-display); font-size: 1.6rem; font-weight: 800; color: var(--color-text); }
+.pnr-station { font-size: 0.95rem; font-weight: 700; color: var(--color-text-secondary); }
+.pnr-date { font-size: 0.8rem; color: var(--color-text-muted); font-weight: 500; }
 
 .pnr-middle {
   flex: 1;
@@ -80,27 +91,26 @@
 .pnr-line {
   width: 100%;
   height: 2px;
-  background: linear-gradient(90deg, var(--color-primary), var(--color-secondary));
+  background: var(--color-border);
 }
 
-.pnr-train { font-weight: 700; font-size: 0.9rem; }
-.pnr-num { font-size: 0.8rem; color: var(--color-text-muted); }
+.pnr-train { font-weight: 800; font-size: 0.95rem; color: var(--color-text); }
+.pnr-num { font-size: 0.8rem; color: var(--color-text-muted); font-weight: 600; }
 
 .pnr-meta-grid {
   display: flex;
   gap: 32px;
-  padding-top: 16px;
-  border-top: 1px solid var(--color-border);
+  padding-top: 8px;
   flex-wrap: wrap;
 }
 
 .pnr-meta-item { display: flex; flex-direction: column; gap: 4px; }
 .meta-key { font-size: 0.75rem; color: var(--color-text-muted); text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; }
-.meta-val { font-size: 1rem; font-weight: 700; }
+.meta-val { font-size: 1rem; font-weight: 700; color: var(--color-text-secondary); }
 
 /* ── Passengers ── */
 .pnr-passengers { padding: 24px; }
-.pnr-passengers h3 { font-size: 1.05rem; }
+.pnr-passengers h3 { font-size: 1.125rem; font-weight: 800; color: var(--color-text); border-bottom: 1px solid var(--color-border); padding-bottom: 8px; }
 
 /* ── Info Grid ── */
 .pnr-info-grid {
@@ -111,20 +121,39 @@
 }
 
 .pnr-info-card {
-  padding: 24px;
+  padding: 32px 24px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
   text-align: center;
   align-items: center;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  transition: var(--transition-normal);
+}
+
+.pnr-info-card:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
 }
 
 .pii { font-size: 2rem; }
-.pnr-info-card h3 { font-size: 1rem; }
-.pnr-info-card p { font-size: 0.875rem; color: var(--color-text-muted); line-height: 1.6; }
+.pnr-info-card h3 { font-size: 1.05rem; font-weight: 700; color: var(--color-text); }
+.pnr-info-card p { font-size: 0.875rem; color: var(--color-text-secondary); line-height: 1.6; font-weight: 500; }
+
+@keyframes pulse-glow-pnr {
+  0%, 100% { box-shadow: 0 0 10px var(--status-color); opacity: 1; }
+  50% { box-shadow: 0 0 20px var(--status-color); opacity: 0.6; }
+}
 
 @media (max-width: 768px) {
-  .pnr-form { flex-direction: column; }
-  .pnr-journey { flex-direction: column; text-align: center; }
+  .pnr-form { flex-direction: column; align-items: stretch; gap: 12px; }
+  .pnr-form button { width: 100%; height: 48px; }
+  .pnr-status-banner { flex-direction: column; align-items: flex-start; gap: 16px; }
+  .psb-pnr { text-align: left; }
+  .pnr-journey { flex-direction: column; text-align: center; padding: 16px; }
+  .pnr-meta-grid { justify-content: space-between; gap: 16px; width: 100%; }
   .pnr-info-grid { grid-template-columns: 1fr; }
 }

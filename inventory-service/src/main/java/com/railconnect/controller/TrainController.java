@@ -24,6 +24,7 @@ import java.util.Map;
 public class TrainController {
 
     private final TrainService trainService;
+    private final SeatSeederService seatSeederService;
 
     @GetMapping("/search")
     @Operation(summary = "Search trains between stations")
@@ -45,5 +46,14 @@ public class TrainController {
     @Operation(summary = "Search stations by name or code")
     public ResponseEntity<ApiResponse<?>> searchStations(@RequestParam String query) {
         return ResponseEntity.ok(ApiResponse.success(trainService.searchStations(query)));
+    }
+
+    @PostMapping("/{trainId}/seats/generate")
+    @Operation(summary = "Generate seats on demand for a train on a journey date")
+    public ResponseEntity<ApiResponse<String>> generateSeats(
+            @PathVariable Long trainId,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
+        seatSeederService.ensureSeatsGenerated(trainId, date);
+        return ResponseEntity.ok(ApiResponse.success("Seats generated successfully"));
     }
 }

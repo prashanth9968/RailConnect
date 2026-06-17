@@ -35,21 +35,25 @@ public class TrainAvailability extends BaseEntity {
     @Column(nullable = false)
     private Integer availableSeats;
 
+    @Builder.Default
     @Column(nullable = false)
     private Integer waitingListCount = 0;
 
+    @Builder.Default
     @Column(nullable = false)
     private Integer racCount = 0;
 
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal baseFare;
 
+    @Builder.Default
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal tatkalFare = BigDecimal.ZERO;
 
     @Column(nullable = false)
     private boolean tatkalOpen = false;
 
+    @Builder.Default
     @Column(nullable = false)
     private boolean bookingOpen = true;
 }

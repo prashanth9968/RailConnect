@@ -10,13 +10,17 @@ import java.util.Optional;
 public interface TrainRepository extends JpaRepository<Train, Long> {
     Optional<Train> findByTrainNumber(String trainNumber);
 
-    @Query("""
-        SELECT DISTINCT t FROM Train t
-        JOIN t.routes r1 ON r1.station.stationCode = :fromCode
-        JOIN t.routes r2 ON r2.station.stationCode = :toCode
-        WHERE r1.stopNumber < r2.stopNumber
+    @Query(value = """
+        SELECT DISTINCT t.* FROM trains t
+        JOIN train_routes r1 ON r1.train_id = t.id
+        JOIN stations s1 ON s1.id = r1.station_id
+        JOIN train_routes r2 ON r2.train_id = t.id
+        JOIN stations s2 ON s2.id = r2.station_id
+        WHERE s1.station_code = :fromCode
+        AND s2.station_code = :toCode
+        AND r1.stop_number < r2.stop_number
         AND t.active = true
-        AND (t.runningDays & :dayBit) > 0
-    """)
+        AND (t.running_days & :dayBit) > 0
+    """, nativeQuery = true)
     List<Train> findTrainsBetweenStations(String fromCode, String toCode, int dayBit);
 }

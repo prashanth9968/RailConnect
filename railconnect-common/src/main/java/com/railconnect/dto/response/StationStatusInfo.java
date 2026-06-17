@@ -14,4 +14,6 @@ public class StationStatusInfo {
     private LocalTime actualDeparture;
     private String status; // DEPARTED, AT_STATION, UPCOMING
     private int delayMinutes;
+    private Double latitude;
+    private Double longitude;
 }

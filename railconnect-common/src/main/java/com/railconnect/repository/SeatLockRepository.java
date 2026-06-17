@@ -15,5 +15,5 @@ public interface SeatLockRepository extends JpaRepository<SeatLock, UUID> {
     @Query("DELETE FROM SeatLock sl WHERE sl.expiresAt < :now")
     int deleteExpiredLocks(@Param("now") Instant now);
     boolean existsByScheduleIdAndClassTypeAndSeatNumberAndCoachNumberAndExpiresAtAfter(
-        UUID scheduleId, String classType, String seatNumber, String coachNumber, Instant now);
+        Long scheduleId, String classType, String seatNumber, String coachNumber, Instant now);
 }

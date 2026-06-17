@@ -8,6 +8,7 @@ import com.railconnect.repository.BookingRepository;
 import com.railconnect.service.NotificationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
 
@@ -16,6 +17,11 @@ import java.util.Map;
 import java.util.UUID;
 
 @Component
+@ConditionalOnProperty(
+        name = "app.kafka.enabled",
+        havingValue = "true",
+        matchIfMissing = false
+)
 @Slf4j
 @RequiredArgsConstructor
 public class NotificationMessageListener {
@@ -28,12 +34,19 @@ public class NotificationMessageListener {
     public void handleTicketConfirmed(String payload) {
         log.info("Received ticket confirmed Kafka payload: {}", payload);
         try {
-            Map<String, String> message = objectMapper.readValue(payload, new TypeReference<Map<String, String>>() {});
+            Map<String, String> message = objectMapper.readValue(
+                    payload,
+                    new TypeReference<Map<String, String>>() {}
+            );
+
             String bookingIdStr = message.get("bookingId");
             String status = message.get("status");
+
             if (bookingIdStr == null) return;
+
             UUID bookingId = UUID.fromString(bookingIdStr);
             Booking booking = bookingRepository.findById(bookingId).orElse(null);
+
             if (booking == null) {
                 log.warn("Booking not found for ID: {}", bookingId);
                 return;
@@ -41,14 +54,23 @@ public class NotificationMessageListener {
 
             if ("CANCELLED".equals(status)) {
                 String refundAmountStr = message.get("refundAmount");
-                BigDecimal refundAmount = refundAmountStr != null ? new BigDecimal(refundAmountStr) : BigDecimal.ZERO;
-                notificationService.sendCancellationConfirmation(booking, refundAmount);
+                BigDecimal refundAmount =
+                        refundAmountStr != null
+                                ? new BigDecimal(refundAmountStr)
+                                : BigDecimal.ZERO;
+
+                notificationService.sendCancellationConfirmation(
+                        booking,
+                        refundAmount
+                );
+
             } else if ("PROMOTED".equals(status)) {
                 notificationService.sendWaitlistConfirmation(booking);
+
             } else {
-                // Default CONFIRMED
                 notificationService.sendBookingConfirmation(booking);
             }
+
         } catch (Exception e) {
             log.error("Failed to handle ticket confirmed event: {}", e.getMessage());
         }

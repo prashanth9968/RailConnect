@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import StationAutocomplete from '../components/StationAutocomplete';
 import './HomePage.css';
 
 const POPULAR_ROUTES = [
@@ -104,36 +105,28 @@ export default function HomePage() {
             {activeTab === 'book' && (
               <form className="widget-form" onSubmit={handleSearch}>
                 <div className="search-row">
-                  <div className="form-group" style={{ flex: 1 }}>
-                    <label className="form-label">From Station</label>
-                    <div className="station-input-wrap">
-                      <span className="station-icon">🏫</span>
-                      <input
-                        className="form-input"
-                        placeholder="e.g. NDLS, New Delhi"
-                        value={from}
-                        onChange={(e) => setFrom(e.target.value)}
-                        required
-                      />
-                    </div>
+                  <div style={{ flex: 1 }}>
+                    <StationAutocomplete
+                      label="From Station"
+                      placeholder="e.g. NDLS, New Delhi"
+                      value={from}
+                      onChange={setFrom}
+                      icon="🏫"
+                    />
                   </div>
 
-                  <button type="button" className="swap-btn" onClick={swap} title="Swap stations">
+                  <button type="button" className="swap-btn" onClick={swap} title="Swap stations" style={{ alignSelf: 'flex-end', marginBottom: '8px' }}>
                     ⇄
                   </button>
 
-                  <div className="form-group" style={{ flex: 1 }}>
-                    <label className="form-label">To Station</label>
-                    <div className="station-input-wrap">
-                      <span className="station-icon">📍</span>
-                      <input
-                        className="form-input"
-                        placeholder="e.g. MMCT, Mumbai"
-                        value={to}
-                        onChange={(e) => setTo(e.target.value)}
-                        required
-                      />
-                    </div>
+                  <div style={{ flex: 1 }}>
+                    <StationAutocomplete
+                      label="To Station"
+                      placeholder="e.g. MMCT, Mumbai"
+                      value={to}
+                      onChange={setTo}
+                      icon="📍"
+                    />
                   </div>
 
                   <div className="form-group" style={{ width: '180px' }}>

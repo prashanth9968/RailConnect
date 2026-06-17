@@ -1,7 +1,38 @@
 import { useState, useEffect, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { trainsAPI } from '../services/api';
+import { toast } from 'react-hot-toast';
+import { MapContainer, TileLayer, Marker, Popup, Polyline } from 'react-leaflet';
+import 'leaflet/dist/leaflet.css';
+import L from 'leaflet';
 import './TrackTrainPage.css';
+
+// Fix default marker icon issue in Leaflet + React
+import markerIcon from 'leaflet/dist/images/marker-icon.png';
+import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
+import markerShadow from 'leaflet/dist/images/marker-shadow.png';
+
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconUrl: markerIcon,
+  iconRetinaUrl: markerIcon2x,
+  shadowUrl: markerShadow,
+});
+
+// Custom icons
+const trainIcon = new L.Icon({
+  iconUrl: 'https://cdn-icons-png.flaticon.com/512/821/821355.png',
+  iconSize: [32, 32],
+  iconAnchor: [16, 16],
+  popupAnchor: [0, -16]
+});
+
+const stationIcon = new L.Icon({
+  iconUrl: 'https://cdn-icons-png.flaticon.com/512/3448/3448639.png',
+  iconSize: [20, 20],
+  iconAnchor: [10, 10],
+  popupAnchor: [0, -10]
+});
 
 export default function TrackTrainPage() {
   const [searchParams] = useSearchParams();
@@ -24,9 +55,18 @@ export default function TrackTrainPage() {
     try {
       const res = await trainsAPI.getLiveStatus(trainNum.trim());
       setTrackData(res.data.data);
+      if (isRefresh) {
+        toast.success('Live status updated!');
+      }
     } catch (err) {
+      const msg = err.response?.status === 404
+        ? `Train ${trainNum} not found. Check the train number.`
+        : 'Failed to fetch live status. Ensure the train is running today.';
       if (!isRefresh) {
-        setError(err.response?.status === 404 ? `Train ${trainNum} not found. Check the train number.` : 'Failed to fetch live status. Ensure the train is running today.');
+        setError(msg);
+        toast.error(msg);
+      } else {
+        toast.error('Failed to update live status.');
       }
     } finally { setLoading(false); setRefreshing(false); }
   };
@@ -82,7 +122,21 @@ export default function TrackTrainPage() {
           </form>
         </div>
 
-        {error && <div className="alert alert-error" style={{ marginTop: '24px' }}><span>⚠️</span> {error}</div>}
+        {loading && (
+          <div className="loading-state" style={{ marginTop: '24px' }}>
+            <div className="skeleton" style={{ height: '140px', borderRadius: '16px' }} />
+            <div className="skeleton" style={{ height: '400px', borderRadius: '16px', marginTop: '16px' }} />
+            <div className="skeleton" style={{ height: '300px', borderRadius: '16px', marginTop: '16px' }} />
+          </div>
+        )}
+
+        {error && !loading && (
+          <div className="empty-state" style={{ marginTop: '24px' }}>
+            <div className="empty-icon">🛰️</div>
+            <h3>Tracking Unavailable</h3>
+            <p>{error}</p>
+          </div>
+        )}
 
         {/* Live Status */}
         {trackData && (
@@ -137,6 +191,57 @@ export default function TrackTrainPage() {
               )}
             </div>
 
+            {/* Live Map */}
+            {trackData.currentLatitude && trackData.currentLongitude && (
+              <div className="card map-card animate-fadeInUp" style={{ height: '400px', width: '100%', padding: 0, overflow: 'hidden', borderRadius: 'var(--radius-lg, 12px)', border: '1px solid var(--color-border, rgba(255,255,255,0.1))' }}>
+                <MapContainer
+                  center={[trackData.currentLatitude, trackData.currentLongitude]}
+                  zoom={6}
+                  style={{ height: '100%', width: '100%', background: '#1e1b4b' }}
+                >
+                  <TileLayer
+                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                  />
+                  
+                  {/* Station Markers */}
+                  {trackData.routeStatus && trackData.routeStatus.map((s, idx) => (
+                    s.latitude && s.longitude && (
+                      <Marker key={idx} position={[s.latitude, s.longitude]} icon={stationIcon}>
+                        <Popup>
+                          <strong>{s.stationName} ({s.stationCode})</strong><br />
+                          Status: {s.status}<br />
+                          {s.scheduledArrival ? `Sch: ${s.scheduledArrival}` : 'Origin'}
+                        </Popup>
+                      </Marker>
+                    )
+                  ))}
+
+                  {/* Route Polyline */}
+                  {trackData.routeStatus && (
+                    <Polyline
+                      positions={trackData.routeStatus
+                        .filter(s => s.latitude && s.longitude)
+                        .map(s => [s.latitude, s.longitude])
+                      }
+                      color="#6366f1"
+                      weight={4}
+                      opacity={0.8}
+                    />
+                  )}
+
+                  {/* Live Train Marker */}
+                  <Marker position={[trackData.currentLatitude, trackData.currentLongitude]} icon={trainIcon}>
+                    <Popup>
+                      <strong>{trackData.trainName} ({trackData.trainNumber})</strong><br />
+                      Speed: {trackData.speedKmph} kmph<br />
+                      Delay: {trackData.delayMinutes} mins
+                    </Popup>
+                  </Marker>
+                </MapContainer>
+              </div>
+            )}
+
             {/* Station Schedule */}
             {trackData.stations && trackData.stations.length > 0 && (
               <div className="card track-schedule">
@@ -174,7 +279,7 @@ export default function TrackTrainPage() {
         )}
 
         {/* Info when empty */}
-        {!trackData && !loading && (
+        {!trackData && !loading && !error && (
           <div className="track-info-grid">
             <div className="card track-info-card">
               <span style={{ fontSize: '2rem' }}>🛰️</span>

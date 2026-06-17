@@ -16,7 +16,7 @@ import java.io.IOException;
 public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
     private final JwtTokenProvider jwtTokenProvider;
     private final UserRepository userRepository;
-    @Value("${app.frontend-url}") private String frontendUrl;
+    @Value("${app.frontend-url:http://localhost:3000}") private String frontendUrl;
     @Override
     public void onAuthenticationSuccess(HttpServletRequest req, HttpServletResponse res, Authentication auth)
             throws IOException {

@@ -1,6 +1,6 @@
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import './Layout.css';
 
 const TrainIcon = () => (
@@ -26,6 +26,15 @@ export default function Layout() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 10);
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   const handleLogout = async () => {
     await logout();
@@ -43,7 +52,7 @@ export default function Layout() {
   return (
     <div className="app-shell">
       {/* Navigation Bar */}
-      <nav className="navbar glass">
+      <nav className={`navbar ${scrolled ? 'scrolled' : ''}`}>
         <div className="container navbar-inner">
           <NavLink to="/" className="navbar-brand">
             <TrainIcon />
@@ -113,22 +122,52 @@ export default function Layout() {
 
       {/* Footer */}
       <footer className="footer">
-        <div className="container footer-inner">
-          <div className="footer-brand">
-            <TrainIcon />
-            <span className="brand-name" style={{ fontSize: '1.125rem' }}>
-              Rail<span className="brand-accent">Connect</span>
-            </span>
+        <div className="container footer-grid">
+          <div className="footer-col brand-col">
+            <div className="footer-brand">
+              <TrainIcon />
+              <span className="brand-name">
+                Rail<span className="brand-accent">Connect</span>
+              </span>
+            </div>
+            <p className="footer-desc">
+              India's smartest rail application. Book tickets instantly, track live GPS locations of trains, and verify PNR status with ease.
+            </p>
+            <p className="footer-copy">
+              © 2026 RailConnect. All rights reserved.
+            </p>
           </div>
-          <p className="footer-copy">
-            © 2024 RailConnect · Smart Railway Booking System
-          </p>
-          <div className="footer-links">
-            <span>Secure Payments</span>
-            <span>·</span>
-            <span>Real-time Tracking</span>
-            <span>·</span>
-            <span>Instant Confirmation</span>
+
+          <div className="footer-col">
+            <h4 className="footer-title">Explore</h4>
+            <div className="footer-links-list">
+              <NavLink to="/">Home</NavLink>
+              <NavLink to="/search">Find Trains</NavLink>
+              <NavLink to="/pnr">PNR Status</NavLink>
+              <NavLink to="/track">Track Train</NavLink>
+            </div>
+          </div>
+
+          <div className="footer-col">
+            <h4 className="footer-title">Support & Legal</h4>
+            <div className="footer-links-list">
+              <a href="#about">About Us</a>
+              <a href="#contact">Contact Support</a>
+              <a href="#privacy">Privacy Policy</a>
+              <a href="#terms">Terms of Service</a>
+            </div>
+          </div>
+
+          <div className="footer-col">
+            <h4 className="footer-title">Technology</h4>
+            <div className="footer-links-list">
+              <span>Secure Payments</span>
+              <span>Microservices Arch</span>
+              <span>GPS Telemetry</span>
+              <a href="https://github.com" target="_blank" rel="noopener noreferrer" className="github-link">
+                🐙 GitHub Project
+              </a>
+            </div>
           </div>
         </div>
       </footer>

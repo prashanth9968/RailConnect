@@ -32,17 +32,30 @@ public class TrainTrackingService {
     private final SimpMessagingTemplate messagingTemplate;
     private final RestTemplate restTemplate;
     private final EtaPredictionEngine etaPredictionEngine;
+    private final TrackingProvider trackingProvider;
 
     @Value("${google.maps.api-key:demo-key}")
     private String googleMapsApiKey;
 
-    @Transactional(readOnly = true)
+    @Transactional
     public TrainLiveStatusResponse getLiveStatus(String trainNumber, LocalDate date) {
         Train train = trainRepository.findByTrainNumber(trainNumber)
             .orElseThrow(() -> new RailConnectException("Train not found", HttpStatus.NOT_FOUND));
 
         TrainSchedule schedule = scheduleRepository.findByTrainIdAndJourneyDate(train.getId(), date)
             .orElseGet(() -> createDefaultSchedule(train, date));
+
+        trackingProvider.getTelemetry(train, date).ifPresent(telemetry -> {
+            schedule.setCurrentLatitude(telemetry.getLatitude());
+            schedule.setCurrentLongitude(telemetry.getLongitude());
+            if (telemetry.getSpeedKmph() != null) {
+                schedule.setSpeedKmph(telemetry.getSpeedKmph());
+            }
+            List<TrainRoute> routes = routeRepository.findByTrainIdOrderByStopNumber(train.getId());
+            updateStationsFromGps(schedule, routes);
+            updateDelayFromGps(schedule, routes);
+            scheduleRepository.save(schedule);
+        });
 
         List<TrainRoute> routes = routeRepository.findByTrainIdOrderByStopNumber(train.getId());
         double distToNext = calculateDistanceToNextStation(schedule, routes);
@@ -130,26 +143,14 @@ public class TrainTrackingService {
     public void broadcastLiveUpdates() {
         List<TrainSchedule> runningToday = scheduleRepository.findAllByDate(LocalDate.now());
         runningToday.forEach(schedule -> {
-            // Simulate coordinates slightly offset from previous values
-            double currentLat = schedule.getCurrentLatitude() == 0 ? 17.3850 : schedule.getCurrentLatitude();
-            double currentLon = schedule.getCurrentLongitude() == 0 ? 78.4867 : schedule.getCurrentLongitude();
-            
-            double nextLat = currentLat + (Math.random() * 0.01 - 0.005);
-            double nextLon = currentLon + (Math.random() * 0.01 - 0.005);
-            int simulatedSpeed = (int) (60 + Math.random() * 50);
-
-            GpsTelemetryRequest request = GpsTelemetryRequest.builder()
-                .trainNumber(schedule.getTrain().getTrainNumber())
-                .latitude(nextLat)
-                .longitude(nextLon)
-                .speedKmph(simulatedSpeed)
-                .build();
-
-            try {
-                ingestTelemetry(request);
-            } catch (Exception e) {
-                log.error("Failed to ingest simulated telemetry for train {}", schedule.getTrain().getTrainNumber(), e);
-            }
+            trackingProvider.getTelemetry(schedule.getTrain(), schedule.getJourneyDate())
+                .ifPresent(telemetry -> {
+                    try {
+                        ingestTelemetry(telemetry);
+                    } catch (Exception e) {
+                        log.error("Failed to ingest telemetry for train {}", schedule.getTrain().getTrainNumber(), e);
+                    }
+                });
         });
     }
 

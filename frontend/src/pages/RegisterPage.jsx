@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { toast } from 'react-hot-toast';
 import { useAuth } from '../context/AuthContext';
 import './AuthPage.css';
 
@@ -13,22 +14,39 @@ export default function RegisterPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
-    if (form.password !== form.confirm) { setError('Passwords do not match.'); return; }
-    if (!form.name.trim()) { setError('Full name is required.'); return; }
-    if (!/^(?=.*[A-Z])(?=.*[0-9])(?=.*[@#$%^&+=]).{8,}$/.test(form.password)) {
-      setError('Password must be at least 8 characters and include uppercase, number, and special character.');
+    if (form.password !== form.confirm) {
+      const msg = 'Passwords do not match.';
+      setError(msg);
+      toast.error(msg);
+      return;
+    }
+    if (!form.name.trim()) {
+      const msg = 'Full name is required.';
+      setError(msg);
+      toast.error(msg);
+      return;
+    }
+    if (!/^(?=.*[A-Z])(?=.*[0-9])(?=.*[^A-Za-z0-9]).{8,}$/.test(form.password)) {
+      const msg = 'Password must be at least 8 characters and include uppercase, number, and special character.';
+      setError(msg);
+      toast.error(msg);
       return;
     }
     if (form.phone && !/^[6-9]\d{9}$/.test(form.phone.replace(/\D/g, ''))) {
-      setError('Phone number must be a valid 10 digit Indian mobile number.');
+      const msg = 'Phone number must be a valid 10 digit Indian mobile number.';
+      setError(msg);
+      toast.error(msg);
       return;
     }
     setLoading(true);
     try {
       await register(form.name, form.email, form.password, form.phone);
+      toast.success('Account created successfully!');
       navigate('/');
     } catch (err) {
-      setError(err.response?.data?.message || 'Registration failed. Please try again.');
+      const msg = err.response?.data?.message || 'Registration failed. Please try again.';
+      setError(msg);
+      toast.error(msg);
     } finally {
       setLoading(false);
     }

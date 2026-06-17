@@ -1,0 +1,151 @@
+train_number,train_name,train_type,running_days,active
+02423,Dibrugarh Guwahati Rajdhani Express,RAJDHANI,127,true
+02436,Guwahati Dibrugarh Rajdhani Express,RAJDHANI,127,true
+12309,Rajendra Nagar-New Delhi Rajdhani Express,RAJDHANI,127,true
+12958,New Delhi-Ahmedabad Swarna Jayanti Rajdhani Expres,RAJDHANI,127,true
+12441,Bilaspur-New Delhi Rajdhani Express,RAJDHANI,127,true
+12953,MumbaiCentral-H Nizamuddin August Kranti Rajdhani Express,RAJDHANI,127,true
+12952,Mumbai Rajdhani Express,RAJDHANI,127,true
+12301,Howrah-New Delhi Rajdhani Express,RAJDHANI,127,true
+12306,New Delhi-Howrah Rajdhani Express,RAJDHANI,127,true
+12313,KOL SEALDAH - NEW DELHI Rajdhani Exp,RAJDHANI,127,true
+12493,Bangalore-Hazrat Nizammudin Rajdhani Express,RAJDHANI,127,true
+12434,Delhi H.Nizamuddin-Chennai Central Rajdhani Expres,RAJDHANI,127,true
+22823,BHUBANESWAR - NEW DELHI RAJDHANI Express,RAJDHANI,127,true
+12235,DIBRUGARH - NEW DELHI Rajdhani Exp,RAJDHANI,127,true
+12423,DIBRUGARH TOWN - NEW DELHI Rajdhani Exp,RAJDHANI,127,true
+12061,HabibGanj Bhopal-Jabalpur Jan Shatabdi,SHATABDI,127,true
+12011,Kalka Shatabdi Express,SHATABDI,127,true
+12056,Dehradun Jan Shatabdi Express,SHATABDI,127,true
+12365,Patna-Ranchi Jan Shatabdi Express,SHATABDI,127,true
+12069,Raigarh-Gondia Jan Shatabdi,SHATABDI,127,true
+12060,Hazarat Nizamuddin-Kota Jan Shatabdi,SHATABDI,127,true
+12033,Kanpur Shatabdi,SHATABDI,127,true
+12083,Mayiladuturai-Coimbatore Jan Shatabdi,SHATABDI,127,true
+12014,Amritsar-NewDelhi Shatabdi,SHATABDI,127,true
+12031,Amritsar Shatabdi Express,SHATABDI,127,true
+12077,Chennai Vijayawada Jan Shatabdi Express,SHATABDI,127,true
+12028,BANGALORE CITY - CHENNAI CENT Shatabdi Exp,SHATABDI,127,true
+12019,Howrah-Ranchi Shatabdi Express,SHATABDI,127,true
+12001,Bhopal-New Delhi Shatabdi Express,SHATABDI,127,true
+12024,Patna-Howrah Jan Shatabdi,SHATABDI,127,true
+12241,Chandigarh-Amritsar Duronto Express,DURONTO,127,true
+12848,Digha-Howrah AC Duronto Express,DURONTO,127,true
+12265,Delhi Sarai Rohilla Jammu Tawi Duronto Express,DURONTO,127,true
+12243,Chennai Central-Coimbatore AC Duronto Express,DURONTO,127,true
+12267,Mumbai Central-Ahmedabad AC Duronto Express,DURONTO,127,true
+12289,Mumbai CSTM-Nagpur Duronto Express,DURONTO,127,true
+12220,Secunderabad-Mumbai LTT AC Duronto Express,DURONTO,127,true
+12239,Mumbai Central Jaipur AC Duronto Express,DURONTO,127,true
+12224,ERNAKULAM - MUM LTT AC Duronto,DURONTO,127,true
+12263,Pune - Hazrat Nizamuddin AC Duronto Express,DURONTO,127,true
+12259,Sealdah-New Delhi AC Duronto Express,DURONTO,127,true
+12282,New Delhi-Bhubaneswar Duronto Express,DURONTO,127,true
+12213,Yeswantpur-Delhi Sarai Rohilla AC Duronto Express,DURONTO,127,true
+12222,HOWRAH - PUNE AC Duronto Exp,DURONTO,127,true
+12245,HOWRAH - YESVANTPUR AC Duronto Exp,DURONTO,127,true
+12209,Kanpur-Kathgodam Garib Rath,GARIB_RATH,127,true
+12736,YESVANTPUR - SECUNDERABAD Garib Rath Exp,GARIB_RATH,127,true
+12881,Howrah Puri Garib Rath,GARIB_RATH,127,true
+12536,Raipur-Lucknow Garib Rath,GARIB_RATH,127,true
+12831,DHANBAD - BHUBANESWAR Garib Rath Exp,GARIB_RATH,127,true
+12360,KOLKATA CHITPUR - PATNA Garib Rath Exp,GARIB_RATH,127,true
+12877,Ranchi-New Delhi Garib Rath,GARIB_RATH,127,true
+12518,GUWAHATI - KOLKATA Garib Rath Exp,GARIB_RATH,127,true
+12201,MUMBAI LTT - KOCHUVELI Garib Rath Exp,GARIB_RATH,127,true
+06502,Ahmedabad -Yesvantpur Garib Rath Special,GARIB_RATH,127,true
+52277,Palia Kalan Mailani Passenger,SUPERFAST,127,true
+09622,Jaipur Ajmer SF Special,SUPERFAST,127,true
+52257,Gonda Mailani Passenger,SUPERFAST,127,true
+12544,Tirupati-Yesvantpur Tri Weekly SF Intercity,SUPERFAST,127,true
+12205,New Delhi-Dehradun AC Express,SUPERFAST,127,true
+12124,Deccan Queen SF Express,SUPERFAST,127,true
+12717,Ratnachal SF Express,SUPERFAST,127,true
+12459,NewDelhi-Amritsar SF InterCity,SUPERFAST,127,true
+12610,BANGALORE - CHENNAI CENT SF Intercity Exp,SUPERFAST,127,true
+12234,NewDelhi-Lucknow AC Express,SUPERFAST,127,true
+12680,Coimbatore-Chennai Central InterCity SF Express,SUPERFAST,127,true
+22607,ERNAKULAM - BANGALORE Weekly SF Exp,SUPERFAST,127,true
+12692,SSP NILAYAM - CHENNAI SF Exp,SUPERFAST,127,true
+10215,Madgaon Ernakulam Weekly Super Fast Express,SUPERFAST,127,true
+12661,CHENNAI EGMORE - SENGOTTAI Pothigai SF Exp,SUPERFAST,127,true
+12693,CHENNAI EGMORE - TUTICORIN Pearl City SF Exp,SUPERFAST,127,true
+12427,REWA - DELHI ANAND VIHAR SF Exp,SUPERFAST,127,true
+11124,Gwalior Barauni Mail,SUPERFAST,127,true
+06010,KollamChennai Central SF Special,SUPERFAST,127,true
+12557,Sapt Kranti SF Express,SUPERFAST,127,true
+12161,Lashkar Superfast Express,SUPERFAST,127,true
+12103,Pune Lucknow Jn SuperFast Express,SUPERFAST,127,true
+12959,MUMBAI DADAR - BHUJ SF Exp,SUPERFAST,127,true
+04728,Mumbai BandraT-Bikaner SF Special,SUPERFAST,127,true
+12912,Haridwar Valsad Superfast Express,SUPERFAST,127,true
+12323,Howrah-NewDelhi SF Express,SUPERFAST,127,true
+12473,Sarvodaya SF Express,SUPERFAST,127,true
+12149,PUNE - PATLIPUTRA SF Exp,SUPERFAST,127,true
+12146,PURI - MUMBAI LTT SF Exp,SUPERFAST,127,true
+12722-Slip,Dakshin Link SF Express,SUPERFAST,127,true
+12138,Punjab Mail,SUPERFAST,127,true
+12476,Jammu Tawi - Hapa Sarvodaya SF Express,SUPERFAST,127,true
+12942,Asansol Ahmedabad (Weekly) SF Express,SUPERFAST,127,true
+12130,HOWRAH - PUNE Azad Hind SF Exp,SUPERFAST,127,true
+13005,Howrah-Amritsar Mail,SUPERFAST,127,true
+12336,MUMBAI LTT - BHAGALPUR SF Exp,SUPERFAST,127,true
+12358,AMRITSAR - KOLKATA CHITPUR Durgiana SF Exp,SUPERFAST,127,true
+12788,Tirunelveli Bilaspur SF Express,SUPERFAST,127,true
+12905,PORBANDAR - HOWRAH SF Exp,SUPERFAST,127,true
+12254,BHAGALPUR - YESVANTPUR Anga SF Exp,SUPERFAST,127,true
+43551,Arakkonam Tiruttani EMU,EXPRESS,127,true
+54388,Kotdwara Najibabad Pass,EXPRESS,127,true
+52540,Darjeeling Kurseong Toy Train,EXPRESS,127,true
+56511,Bangarpet Marikuppam Passenger,EXPRESS,127,true
+56137,Ooty-Mettupalayam Passenger,EXPRESS,127,true
+52184,Sirmuttra Dhaulpur Passenger,EXPRESS,127,true
+56709,Dindigul Madurai Passenger,EXPRESS,127,true
+52950,Delvada Veraval Passenger,EXPRESS,127,true
+53138,Barharwa- Rampurhat Passenger,EXPRESS,127,true
+51607,Bina Guna Passenger,EXPRESS,127,true
+63523,Barddhaman Asansol mEMU,EXPRESS,127,true
+41095,Chennai Beach Velachery EMU,EXPRESS,127,true
+51885,BINA DAMOH PASS,EXPRESS,127,true
+54421,Rewari Delhi Sarai Rohilla Passenger,EXPRESS,127,true
+52963,Ratlam Mhow Fast Passenger,EXPRESS,127,true
+52943,Ahmedabad Botad Passenger,EXPRESS,127,true
+55203,Narkatiaganj Gorakhpur Passenger,EXPRESS,127,true
+13409,InterCity Express,EXPRESS,127,true
+14810,Jaisalmer Express,EXPRESS,127,true
+51825,Kanpur Farrukhabaad Passenger,EXPRESS,127,true
+59272,Bhavnagar Surendranagar Passenger,EXPRESS,127,true
+51883,Bina Gwalior Passenger,EXPRESS,127,true
+58425,Kendujhargarh-Bhubaneswar Fast Passenger,EXPRESS,127,true
+55794,Bamanhat New Jalpaiguri Passenger,EXPRESS,127,true
+12118,Manmad-Mumbai LTT Express,EXPRESS,127,true
+57652,Repalle Secunderabad Passenger,EXPRESS,127,true
+56650,Kannur Coimbatore Fast Passenger,EXPRESS,127,true
+15770,Lumding Alipurduar Express,EXPRESS,127,true
+23112,Giridih Kolkata Express,EXPRESS,127,true
+13011,InterCity Express,EXPRESS,127,true
+03284,Tatanagar-Rajendra Nagar Special,EXPRESS,127,true
+06618,Nagercoil-Coimbatore Special,EXPRESS,127,true
+14370-Slip,Triveni Express Slip,EXPRESS,127,true
+16649,Parasuram Express,EXPRESS,127,true
+13142,Teesta Torsa Express,EXPRESS,127,true
+12406,H.Nizamuddin-Bhusaval Gondwana Express,EXPRESS,127,true
+22132,MANDUADIH - PUNE Gyan Ganga Exp,EXPRESS,127,true
+13010,Doon Express,EXPRESS,127,true
+15716,Garib Nawaz Express Slip,EXPRESS,127,true
+12645,Millennium Expres,EXPRESS,127,true
+04601,Jammu Tawi Udhampur Special,EXPRESS,127,true
+04602,UDHAMPUR JAMMUTAWI DMU,EXPRESS,127,true
+04603,JAT UDAHMPUR DMU,EXPRESS,127,true
+04604,UDHAMPUR JAMMUTAWI DMU,EXPRESS,127,true
+04741,Sirsa - Hisar Passenger Special,EXPRESS,127,true
+04742,Hisar - Sirsa Passenger Special,EXPRESS,127,true
+04853,Rewari Degana Merta Special,EXPRESS,127,true
+04854,Degana Merta Special,EXPRESS,127,true
+09022,JAMMU TAWI - BANDRA TERMINUS AC Suvidha Special (Starts 5 April),EXPRESS,127,true
+11017,Chalukya Express,EXPRESS,127,true
+11019,Konark Express,EXPRESS,127,true
+11020,Konark Express,EXPRESS,127,true
+11023,Sahyadri Express,EXPRESS,127,true
+11024,Sahyadri Express,EXPRESS,127,true
+11025,Manmad Pune Express(Via Nasik),EXPRESS,127,true

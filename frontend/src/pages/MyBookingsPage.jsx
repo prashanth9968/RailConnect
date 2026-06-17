@@ -1,13 +1,14 @@
 import { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { bookingsAPI } from '../services/api';
+import { toast } from 'react-hot-toast';
 import './MyBookingsPage.css';
 
 const STATUS_STYLES = {
-  CONFIRMED: { cls: 'badge-success', label: '✓ Confirmed' },
+  CONFIRMED: { cls: 'badge-info', label: '✓ Confirmed' },
   PENDING: { cls: 'badge-warning', label: '⏳ Pending' },
   CANCELLED: { cls: 'badge-danger', label: '✕ Cancelled' },
-  WAITING_LIST: { cls: 'badge-warning', label: '📋 Waitlist' },
+  WAITING_LIST: { cls: 'badge-danger', label: '📋 Waitlist' },
 };
 
 export default function MyBookingsPage() {
@@ -18,14 +19,14 @@ export default function MyBookingsPage() {
   const [cancelling, setCancelling] = useState(null);
   const [page, setPage] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
-  const [showSuccess, setShowSuccess] = useState(!!state?.success);
 
   useEffect(() => {
-    if (showSuccess) {
-      const t = setTimeout(() => setShowSuccess(false), 5000);
-      return () => clearTimeout(t);
+    if (state?.success) {
+      toast.success('Booking confirmed! Ticket details sent to email.');
+      // clear router state so it doesn't trigger again on refresh
+      window.history.replaceState({}, document.title);
     }
-  }, [showSuccess]);
+  }, [state]);
 
   useEffect(() => { fetchBookings(page); }, [page]);
 
@@ -45,10 +46,13 @@ export default function MyBookingsPage() {
     if (!window.confirm(`Cancel booking PNR ${booking.pnrNumber}? Refund will be processed automatically.`)) return;
     setCancelling(booking.bookingId);
     try {
-      await bookingsAPI.cancel({ bookingId: booking.bookingId, pnrNumber: booking.pnrNumber });
+      const res = await bookingsAPI.cancel({ bookingId: booking.bookingId, pnrNumber: booking.pnrNumber });
+      const refund = res.data?.data?.refundAmount || 0;
+      toast.success(`Booking PNR ${booking.pnrNumber} cancelled. Refund of ₹${refund.toFixed(2)} processed!`);
       fetchBookings(page);
     } catch (err) {
-      setError(err.response?.data?.message || 'Cancellation failed.');
+      const errMsg = err.response?.data?.message || 'Cancellation failed.';
+      toast.error(errMsg);
     } finally { setCancelling(null); }
   };
 
@@ -60,13 +64,7 @@ export default function MyBookingsPage() {
           <p className="page-subtitle">Your journey history and upcoming trips</p>
         </div>
 
-        {showSuccess && (
-          <div className="alert alert-success animate-fadeIn">
-            <span>🎉</span> Booking confirmed! Your ticket has been sent to your email.
-          </div>
-        )}
-
-        {error && <div className="alert alert-error"><span>⚠️</span> {error}</div>}
+        {error && <div className="alert alert-error" style={{ marginBottom: '20px' }}><span>⚠️</span> {error}</div>}
 
         {loading ? (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { toast } from 'react-hot-toast';
 import { useAuth } from '../context/AuthContext';
 import './AuthPage.css';
 
@@ -16,9 +17,12 @@ export default function LoginPage() {
     setLoading(true);
     try {
       await login(form.email, form.password);
+      toast.success('Signed in successfully!');
       navigate('/');
     } catch (err) {
-      setError(err.response?.data?.message || 'Invalid email or password. Please try again.');
+      const msg = err.response?.data?.message || 'Invalid email or password. Please try again.';
+      setError(msg);
+      toast.error(msg);
     } finally {
       setLoading(false);
     }

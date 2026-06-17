@@ -24,6 +24,7 @@ public class BookingResponse {
     private BookingStatus status;
     private List<PassengerResponse> passengers;
     private BigDecimal totalAmount;
+    private BigDecimal refundAmount;
     private PaymentStatus paymentStatus;
     private LocalDateTime bookedAt;
 }

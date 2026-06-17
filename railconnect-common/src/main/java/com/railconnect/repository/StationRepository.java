@@ -10,6 +10,12 @@ import java.util.Optional;
 public interface StationRepository extends JpaRepository<Station, Long> {
     Optional<Station> findByStationCode(String stationCode);
 
-    @Query("SELECT s FROM Station s WHERE LOWER(s.stationName) LIKE LOWER(CONCAT('%', :query, '%')) OR LOWER(s.stationCode) LIKE LOWER(CONCAT('%', :query, '%'))")
+    @Query("""
+    SELECT s FROM Station s
+    WHERE LOWER(s.stationName) LIKE LOWER(CONCAT('%', :query, '%'))
+       OR LOWER(s.stationCode) LIKE LOWER(CONCAT('%', :query, '%'))
+       OR LOWER(s.city) LIKE LOWER(CONCAT('%', :query, '%'))
+    ORDER BY s.stationName
+    """)
     List<Station> searchStations(String query);
 }

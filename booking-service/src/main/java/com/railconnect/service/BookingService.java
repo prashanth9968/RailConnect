@@ -7,6 +7,7 @@ import com.railconnect.enums.*;
 import com.railconnect.exception.RailConnectException;
 import com.railconnect.exception.SeatLockedException;
 import com.railconnect.repository.*;
+import com.railconnect.client.InventoryClient;
 import com.railconnect.util.FareCalculator;
 import com.railconnect.util.PNRGenerator;
 import lombok.RequiredArgsConstructor;
@@ -16,6 +17,7 @@ import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -40,13 +42,20 @@ public class BookingService {
     private final FareCalculator fareCalculator;
     private final KafkaTemplate<String, Object> kafkaTemplate;
     private final AutoPromotionService autoPromotionService;
+    private final InventoryClient inventoryClient;
+    private final TrainAvailabilityRepository trainAvailabilityRepository;
 
     @Transactional
+    @CacheEvict(value = {"availability", "trains"}, allEntries = true)
     public BookingResponse initiateBooking(BookingRequest request, UUID userId) {
         User user = userRepository.findById(userId)
             .orElseThrow(() -> new RailConnectException("User not found", HttpStatus.NOT_FOUND));
         Train train = trainRepository.findById(request.getTrainId())
             .orElseThrow(() -> new RailConnectException("Train not found", HttpStatus.NOT_FOUND));
+
+        // Ensure physical seats exist in database (REST call to inventory-service)
+        inventoryClient.ensureSeatsGenerated(train.getId(), request.getJourneyDate().toString());
+
         Station source = stationRepository.findByStationCode(request.getSourceStationCode())
             .orElseThrow(() -> new RailConnectException("Source station not found", HttpStatus.NOT_FOUND));
         Station dest = stationRepository.findByStationCode(request.getDestinationStationCode())
@@ -81,7 +90,7 @@ public class BookingService {
         // Try to assign seats with optimistic locking
         try {
             List<Seat> availableSeats = seatRepository.findAvailableSeatsWithLock(
-                train.getId(), request.getJourneyDate(), request.getSeatClass().name());
+                train.getId(), request.getJourneyDate(), request.getSeatClass());
 
             String pnr = generateUniquePnr();
             Booking booking = Booking.builder()
@@ -108,6 +117,15 @@ public class BookingService {
 
             // Set booking status based on seat availability
             if (availableSeats.size() >= count) {
+                // Try to decrement availability atomically
+                int rowsUpdated = trainAvailabilityRepository.decrementAvailability(
+                    train.getId(), request.getJourneyDate(), mapToClassType(request.getSeatClass()), request.getQuotaType(), count
+                );
+                
+                if (rowsUpdated == 0) {
+                    throw new RailConnectException("Seats fully booked. Please retry.", HttpStatus.BAD_REQUEST);
+                }
+
                 booking.setStatus(resolveStatus(request.getQuotaType()));
                 // Lock seats
                 for (int i = 0; i < count; i++) {
@@ -170,6 +188,7 @@ public class BookingService {
     }
 
     @Transactional
+    @CacheEvict(value = {"availability", "trains"}, allEntries = true)
     public BookingResponse cancelBooking(CancellationRequest request, UUID userId) {
         Booking booking = bookingRepository.findByPnrNumber(request.getPnrNumber())
             .orElseThrow(() -> new RailConnectException("PNR not found", HttpStatus.NOT_FOUND));
@@ -201,6 +220,8 @@ public class BookingService {
         booking.setCancellation(cancellation);
         Booking saved = bookingRepository.save(booking);
 
+        int count = booking.getPassengers().size();
+
         // Auto-promote or release seats
         booking.getPassengers().forEach(p -> {
             if (p.getSeatNumber() != null) {
@@ -212,16 +233,26 @@ public class BookingService {
                 );
                 if (!promoted) {
                     // Release the seat back to AVAILABLE
-                    seatRepository.findByCoachAndDate(Long.parseLong("0"), booking.getJourneyDate())
-                        .forEach(s -> {
-                            if (s.getSeatNumber().equals(p.getSeatNumber())) {
-                                s.setStatus(SeatStatus.AVAILABLE);
-                                seatRepository.save(s);
-                            }
-                        });
+                    Optional<TrainCoach> coachOpt = booking.getTrain().getCoaches().stream()
+                        .filter(c -> c.getCoachNumber().equals(p.getCoachNumber()))
+                        .findFirst();
+                    if (coachOpt.isPresent()) {
+                        seatRepository.findByCoachAndDate(coachOpt.get().getId(), booking.getJourneyDate())
+                            .forEach(s -> {
+                                if (s.getSeatNumber().equals(p.getSeatNumber())) {
+                                    s.setStatus(SeatStatus.AVAILABLE);
+                                    seatRepository.save(s);
+                                }
+                            });
+                    }
                 }
             }
         });
+
+        // Increment availability atomically!
+        trainAvailabilityRepository.incrementAvailability(
+            booking.getTrain().getId(), booking.getJourneyDate(), mapToClassType(booking.getSeatClass()), booking.getQuotaType(), count
+        );
 
         try {
             kafkaTemplate.send(
@@ -294,6 +325,7 @@ public class BookingService {
             .status(b.getStatus())
             .passengers(b.getPassengers().stream().map(this::toPassengerResponse).toList())
             .totalAmount(b.getTotalAmount())
+            .refundAmount(b.getRefundAmount())
             .paymentStatus(b.getPayment() != null ? b.getPayment().getStatus() : PaymentStatus.PENDING)
             .bookedAt(b.getBookedAt())
             .build();
@@ -311,5 +343,17 @@ public class BookingService {
             .bookingStatus(p.getBookingStatus())
             .waitlistNumber(p.getWaitlistNumber())
             .build();
+    }
+
+    private ClassType mapToClassType(SeatClass seatClass) {
+        return switch (seatClass) {
+            case SL -> ClassType.SL;
+            case S3 -> ClassType.THIRD_AC;
+            case S2 -> ClassType.SECOND_AC;
+            case S1 -> ClassType.FIRST_AC;
+            case CC -> ClassType.AC_CHAIR_CAR;
+            case EC -> ClassType.EXECUTIVE_CHAIR;
+            default -> ClassType.SECOND_SEATING;
+        };
     }
 }
