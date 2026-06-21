@@ -6,9 +6,11 @@ import './MyBookingsPage.css';
 
 const STATUS_STYLES = {
   CONFIRMED: { cls: 'badge-info', label: '✓ Confirmed' },
+  TATKAL_CONFIRMED: { cls: 'badge-info', label: '✓ Tatkal Confirmed' },
+  PREMIUM_TATKAL_CONFIRMED: { cls: 'badge-info', label: '✓ Premium Tatkal Confirmed' },
   PENDING: { cls: 'badge-warning', label: '⏳ Pending' },
   CANCELLED: { cls: 'badge-danger', label: '✕ Cancelled' },
-  WAITING_LIST: { cls: 'badge-danger', label: '📋 Waitlist' },
+  WAITLISTED: { cls: 'badge-warning', label: '📋 Waitlisted' },
 };
 
 export default function MyBookingsPage() {
@@ -44,9 +46,9 @@ export default function MyBookingsPage() {
 
   const handleCancel = async (booking) => {
     if (!window.confirm(`Cancel booking PNR ${booking.pnrNumber}? Refund will be processed automatically.`)) return;
-    setCancelling(booking.bookingId);
+    setCancelling(booking.id);
     try {
-      const res = await bookingsAPI.cancel({ bookingId: booking.bookingId, pnrNumber: booking.pnrNumber });
+      const res = await bookingsAPI.cancel({ pnrNumber: booking.pnrNumber, reason: 'Plan changed' });
       const refund = res.data?.data?.refundAmount || 0;
       toast.success(`Booking PNR ${booking.pnrNumber} cancelled. Refund of ₹${refund.toFixed(2)} processed!`);
       fetchBookings(page);
@@ -82,9 +84,10 @@ export default function MyBookingsPage() {
           <>
             <div className="bookings-list">
               {bookings.map((b) => {
-                const statusStyle = STATUS_STYLES[b.bookingStatus] || { cls: 'badge-primary', label: b.bookingStatus };
+                const statusStyle = STATUS_STYLES[b.status] || { cls: 'badge-primary', label: b.status };
+                const isCancellable = b.status === 'CONFIRMED' || b.status === 'TATKAL_CONFIRMED' || b.status === 'PREMIUM_TATKAL_CONFIRMED' || b.status === 'WAITLISTED';
                 return (
-                  <div key={b.bookingId} className="card booking-item">
+                  <div key={b.id} className="card booking-item">
                     <div className="booking-item-header">
                       <div className="booking-pnr">
                         <span className="pnr-label">PNR</span>
@@ -101,12 +104,10 @@ export default function MyBookingsPage() {
                         </div>
                         <div className="bi-journey">
                           <div className="bi-station">
-                            <span className="bi-time">{b.departureTime}</span>
                             <span className="bi-code">{b.sourceStation}</span>
                           </div>
                           <div className="bi-arrow">→</div>
                           <div className="bi-station">
-                            <span className="bi-time">{b.arrivalTime}</span>
                             <span className="bi-code">{b.destinationStation}</span>
                           </div>
                         </div>
@@ -127,19 +128,19 @@ export default function MyBookingsPage() {
                         </div>
                         <div className="meta-item">
                           <span className="meta-label">Total Fare</span>
-                          <span className="meta-val fare-highlight">₹{b.totalFare || '—'}</span>
+                          <span className="meta-val fare-highlight">₹{b.totalAmount || '—'}</span>
                         </div>
                       </div>
                     </div>
 
-                    {(b.bookingStatus === 'CONFIRMED' || b.bookingStatus === 'WAITING_LIST') && (
+                    {isCancellable && (
                       <div className="booking-item-footer">
                         <button
                           className="btn btn-danger btn-sm"
                           onClick={() => handleCancel(b)}
-                          disabled={cancelling === b.bookingId}
+                          disabled={cancelling === b.id}
                         >
-                          {cancelling === b.bookingId ? <><span className="spinner" /> Cancelling...</> : '✕ Cancel Booking'}
+                          {cancelling === b.id ? <><span className="spinner" /> Cancelling...</> : '✕ Cancel Booking'}
                         </button>
                       </div>
                     )}

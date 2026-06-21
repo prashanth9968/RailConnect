@@ -34,8 +34,8 @@ export default function PnrStatusPage() {
 
   const handleSubmit = (e) => { e.preventDefault(); fetchStatus(); };
 
-  const statusColor = status?.bookingStatus === 'CONFIRMED' ? 'var(--color-success)'
-    : status?.bookingStatus === 'CANCELLED' ? 'var(--color-danger)'
+  const statusColor = status?.chartStatus === 'CONFIRMED' ? 'var(--color-success)'
+    : status?.chartStatus === 'CANCELLED' ? 'var(--color-danger)'
     : 'var(--color-warning)';
 
   return (
@@ -78,7 +78,7 @@ export default function PnrStatusPage() {
                 <div className="psb-status-dot" />
                 <div>
                   <div className="psb-label">Booking Status</div>
-                  <div className="psb-status">{status.bookingStatus?.replace(/_/g, ' ')}</div>
+                  <div className="psb-status">{status.chartStatus?.replace(/_/g, ' ')}</div>
                 </div>
               </div>
               <div className="psb-pnr">
@@ -93,7 +93,7 @@ export default function PnrStatusPage() {
               <div className="pnr-journey">
                 <div className="pnr-endpoint">
                   <span className="pnr-time">{status.departureTime || '—'}</span>
-                  <span className="pnr-station">{status.sourceStation}</span>
+                  <span className="pnr-station">{status.fromStation}</span>
                   <span className="pnr-date">{status.journeyDate}</span>
                 </div>
                 <div className="pnr-middle">
@@ -103,7 +103,7 @@ export default function PnrStatusPage() {
                 </div>
                 <div className="pnr-endpoint" style={{ textAlign: 'right' }}>
                   <span className="pnr-time">{status.arrivalTime || '—'}</span>
-                  <span className="pnr-station">{status.destinationStation}</span>
+                  <span className="pnr-station">{status.toStation}</span>
                   <span className="pnr-date">{status.arrivalDate || status.journeyDate}</span>
                 </div>
               </div>
@@ -146,15 +146,15 @@ export default function PnrStatusPage() {
                       {status.passengers.map((p, i) => (
                         <tr key={i}>
                           <td>{i + 1}</td>
-                          <td style={{ fontWeight: 600 }}>{p.passengerName}</td>
-                          <td>{p.passengerAge}</td>
-                          <td>{p.passengerGender?.charAt(0)}</td>
+                          <td style={{ fontWeight: 600 }}>{p.name}</td>
+                          <td>{p.age}</td>
+                          <td>{p.gender?.charAt(0)}</td>
                           <td>{p.coachNumber || '—'}</td>
                           <td>{p.seatNumber || '—'}</td>
-                          <td>{BERTH_LABELS[p.berthAllotted] || p.berthAllotted || '—'}</td>
+                          <td>{BERTH_LABELS[p.berthType] || p.berthType || '—'}</td>
                           <td>
-                            <span className={`badge ${p.status === 'CONFIRMED' ? 'badge-success' : p.status === 'WAITING_LIST' ? 'badge-warning' : 'badge-danger'}`}>
-                              {p.status || 'CNF'}
+                            <span className={`badge ${p.bookingStatus === 'CONFIRMED' ? 'badge-success' : p.bookingStatus === 'WAITING_LIST' ? 'badge-warning' : 'badge-danger'}`}>
+                              {p.bookingStatus || 'CNF'}
                             </span>
                           </td>
                         </tr>

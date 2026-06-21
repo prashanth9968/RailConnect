@@ -61,6 +61,11 @@
   height: 2px;
   background: var(--color-border);
   margin-bottom: 20px;
+  transition: background var(--transition-normal);
+}
+
+.bs-line.done {
+  background: var(--color-success);
 }
 
 .booking-step.completed + .bs-line {

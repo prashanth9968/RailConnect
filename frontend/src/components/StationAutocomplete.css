@@ -7,6 +7,10 @@
   width: 100%;
 }
 
+.autocomplete-wrapper:focus-within {
+  z-index: 100;
+}
+
 .station-input-wrap {
   position: relative;
   display: flex;
@@ -50,14 +54,16 @@
   position: absolute;
   top: calc(100% + 6px);
   left: 0;
-  right: 0;
+  /* min-width ensures station names are never cut off */
+  min-width: 320px;
+  right: auto;
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
-  box-shadow: var(--shadow-card);
-  max-height: 250px;
+  box-shadow: 0 20px 40px -8px rgba(0,0,0,0.15), 0 4px 16px -4px rgba(0,0,0,0.08);
+  max-height: 300px;
   overflow-y: auto;
-  z-index: 1000;
+  z-index: 9999;
   list-style: none;
   padding: 6px 0;
   margin: 0;
@@ -68,8 +74,9 @@
   cursor: pointer;
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 2px;
   transition: var(--transition-fast);
+  min-width: 0;
 }
 
 .autocomplete-suggestions li:hover {
@@ -80,6 +87,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
+  white-space: nowrap;
 }
 
 .as-code {

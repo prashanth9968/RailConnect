@@ -4,12 +4,14 @@
 .search-bar-wrapper {
   position: sticky;
   top: var(--nav-height);
-  z-index: 50;
+  z-index: 500;
   border-bottom: 1px solid var(--color-border);
   padding: 16px 0;
-  background: rgba(255, 255, 255, 0.9);
+  background: rgba(255, 255, 255, 0.97);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
+  /* CRITICAL: must be visible so autocomplete dropdown shows below */
+  overflow: visible;
 }
 
 .search-bar-form {
@@ -291,6 +293,18 @@
   background: rgba(79, 70, 229, 0.04);
   transform: translateY(-2px);
   box-shadow: var(--shadow-md);
+}
+
+.class-card-unavail {
+  opacity: 0.45;
+  cursor: not-allowed !important;
+}
+
+.class-card-unavail:hover {
+  transform: none;
+  box-shadow: var(--shadow-sm);
+  border-color: var(--color-border);
+  background: var(--color-surface);
 }
 
 .class-badge {

@@ -5,6 +5,7 @@ import lombok.Builder;
 import lombok.Data;
 
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.List;
 
 @Data @Builder
@@ -19,4 +20,8 @@ public class PnrStatusResponse {
     private BookingStatus chartStatus;
     private List<PassengerResponse> passengers;
     private String boardingPoint;
+    private java.math.BigDecimal totalFare;
+    private LocalTime departureTime;
+    private LocalTime arrivalTime;
 }
+

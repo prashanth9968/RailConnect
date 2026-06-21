@@ -11,11 +11,32 @@ export function AuthProvider({ children }) {
     // Restore session from localStorage
     const token = localStorage.getItem('accessToken');
     const savedUser = localStorage.getItem('user');
+    const lastActivity = localStorage.getItem('lastActivity');
+    
     if (token && savedUser) {
-      try {
-        setUser(JSON.parse(savedUser));
-      } catch {
-        localStorage.clear();
+      let shouldLogout = false;
+      if (lastActivity) {
+        const diff = Date.now() - parseInt(lastActivity, 10);
+        if (diff > 24 * 60 * 60 * 1000) {
+          shouldLogout = true;
+        }
+      } else {
+        localStorage.setItem('lastActivity', Date.now().toString());
+      }
+
+      if (shouldLogout) {
+        localStorage.removeItem('accessToken');
+        localStorage.removeItem('refreshToken');
+        localStorage.removeItem('user');
+        localStorage.removeItem('lastActivity');
+        setUser(null);
+      } else {
+        try {
+          setUser(JSON.parse(savedUser));
+          localStorage.setItem('lastActivity', Date.now().toString());
+        } catch {
+          localStorage.clear();
+        }
       }
     }
     setLoading(false);
@@ -27,6 +48,7 @@ export function AuthProvider({ children }) {
     const responseUser = data.user || {};
     localStorage.setItem('accessToken', data.accessToken);
     localStorage.setItem('refreshToken', data.refreshToken);
+    localStorage.setItem('lastActivity', Date.now().toString());
     const userData = {
       id: responseUser.id,
       name: [responseUser.firstName, responseUser.lastName].filter(Boolean).join(' ') || email.split('@')[0],
@@ -52,6 +74,7 @@ export function AuthProvider({ children }) {
     const responseUser = data.user || {};
     localStorage.setItem('accessToken', data.accessToken);
     localStorage.setItem('refreshToken', data.refreshToken);
+    localStorage.setItem('lastActivity', Date.now().toString());
     const userData = {
       id: responseUser.id,
       name: [responseUser.firstName, responseUser.lastName].filter(Boolean).join(' ') || name,
@@ -68,6 +91,7 @@ export function AuthProvider({ children }) {
     localStorage.removeItem('accessToken');
     localStorage.removeItem('refreshToken');
     localStorage.removeItem('user');
+    localStorage.removeItem('lastActivity');
     setUser(null);
   };
 

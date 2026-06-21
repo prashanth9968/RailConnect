@@ -12,6 +12,7 @@ api.interceptors.request.use(
     const token = localStorage.getItem('accessToken');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
+      localStorage.setItem('lastActivity', Date.now().toString());
     }
     return config;
   },
@@ -23,7 +24,7 @@ api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    if ((error.response?.status === 401 || error.response?.status === 403) && !originalRequest._retry) {
       originalRequest._retry = true;
       const refreshToken = localStorage.getItem('refreshToken');
       if (refreshToken) {
@@ -55,7 +56,16 @@ export const authAPI = {
 
 // ── Trains API ──
 export const trainsAPI = {
-  search: (params) => api.get('/trains/search', { params }),
+  // Backend expects: fromStation, toStation, journeyDate
+  search: ({ sourceStation, destinationStation, journeyDate, ...rest }) =>
+    api.get('/trains/search', {
+      params: {
+        fromStation: sourceStation,
+        toStation: destinationStation,
+        journeyDate,
+        ...rest,
+      },
+    }),
   getAvailability: (trainId, date, seatClass) =>
     api.get(`/trains/${trainId}/availability`, { params: { date, seatClass } }),
   searchStations: (query) => api.get('/trains/stations/search', { params: { query } }),

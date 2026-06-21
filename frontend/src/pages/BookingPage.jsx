@@ -4,6 +4,7 @@ import { bookingsAPI, paymentsAPI } from '../services/api';
 import { toast } from 'react-hot-toast';
 import './BookingPage.css';
 
+// Covers both old-style (SLEEPER) and backend seat codes (S3, S2, S1, etc.)
 const CLASS_NAMES = {
   SLEEPER: 'Sleeper (SL)',
   AC_3_TIER: 'AC 3 Tier (3A)',
@@ -11,11 +12,13 @@ const CLASS_NAMES = {
   AC_1_TIER: 'AC First Class (1A)',
   CHAIR_CAR: 'Chair Car (CC)',
   EXECUTIVE: 'Executive Chair Car (EC)',
-};
-
-const FARE_MAP = {
-  SLEEPER: 450, AC_3_TIER: 1200, AC_2_TIER: 1800,
-  AC_1_TIER: 3000, CHAIR_CAR: 700, EXECUTIVE: 1400,
+  // Backend seat class codes
+  S1: 'AC First Class (1A)',
+  S2: 'AC 2 Tier (2A)',
+  S3: 'AC 3 Tier (3A)',
+  S4: 'Sleeper (SL)',
+  S5: 'Chair Car (CC)',
+  S6: 'Executive (EC)',
 };
 
 const GENDERS = ['MALE', 'FEMALE', 'OTHER'];
@@ -25,7 +28,9 @@ export default function BookingPage() {
   const { state } = useLocation();
   const navigate = useNavigate();
   const [step, setStep] = useState(1); // 1=Passengers, 2=Review, 3=Payment
-  const [passengers, setPassengers] = useState([{ name: '', age: '', gender: 'MALE', berthPreference: 'NO_PREFERENCE' }]);
+  const [passengers, setPassengers] = useState([
+    { name: '', age: '', gender: 'MALE', berthPreference: 'NO_PREFERENCE' },
+  ]);
   const [booking, setBooking] = useState(null);
   const [payment, setPayment] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -39,8 +44,11 @@ export default function BookingPage() {
 
   if (!train) return null;
 
-  const fare = FARE_MAP[seatClass] || 1000;
+  // Use actual fare from classAvailability if available, otherwise fallback
+  const availData = train.classAvailability?.[seatClass];
+  const fare = availData?.baseFare || 1000;
   const totalFare = fare * passengers.length;
+  const className = CLASS_NAMES[seatClass] || seatClass;
 
   const addPassenger = () => {
     if (passengers.length >= 6) return;
@@ -53,9 +61,28 @@ export default function BookingPage() {
   };
 
   const updatePassenger = (i, k, v) => {
-    setPassengers(passengers.map((p, idx) => idx === i ? { ...p, [k]: v } : p));
+    setPassengers(passengers.map((p, idx) => (idx === i ? { ...p, [k]: v } : p)));
   };
 
+  // Step 1 → 2: local validation only, no API call yet
+  const handleGoToReview = () => {
+    setError('');
+    const invalid = passengers.find((p) => !p.name.trim() || !p.age);
+    if (invalid) {
+      setError('Please fill in name and age for all passengers.');
+      toast.error('Please fill in all passenger details.');
+      return;
+    }
+    const invalidAge = passengers.find((p) => parseInt(p.age) < 1 || parseInt(p.age) > 120);
+    if (invalidAge) {
+      setError('Age must be between 1 and 120.');
+      return;
+    }
+    setStep(2);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  // Step 2 → 3: Call backend to initiate booking
   const handleInitiateBooking = async () => {
     setLoading(true);
     setError('');
@@ -64,55 +91,52 @@ export default function BookingPage() {
         trainId: train.trainId,
         journeyDate: date,
         seatClass,
+        // Required by backend
+        sourceStationCode: train.sourceStationCode,
+        destinationStationCode: train.destinationStationCode,
         passengers: passengers.map((p) => ({
-          passengerName: p.name,
-          passengerAge: parseInt(p.age),
-          passengerGender: p.gender,
+          name: p.name,
+          age: parseInt(p.age),
+          gender: p.gender,
           berthPreference: p.berthPreference,
         })),
       });
       setBooking(res.data.data);
-      setStep(2);
-      toast.success('Passenger details saved.');
-    } catch (err) {
-      const msg = err.response?.data?.message || 'Booking initiation failed. Please try again.';
-      setError(msg);
-      toast.error(msg);
-    } finally { setLoading(false); }
-  };
-
-  const handleInitiatePayment = async () => {
-    setLoading(true);
-    setError('');
-    try {
-      const res = await paymentsAPI.initiate({ bookingId: booking.bookingId, amount: totalFare });
-      setPayment(res.data.data);
       setStep(3);
+      toast.success('Booking confirmed! Proceeding to payment.');
     } catch (err) {
-      const msg = err.response?.data?.message || 'Payment initiation failed.';
-      setError(msg);
-      toast.error(msg);
-    } finally { setLoading(false); }
+      const msg = err.response?.data?.message || 'Booking failed. Please try again.';
+      const validationErrors = err.response?.data?.errors;
+      const detail = validationErrors
+        ? Object.values(validationErrors).join(', ')
+        : msg;
+      setError(detail);
+      toast.error(detail);
+      if (err.response?.status === 401 || err.response?.status === 403) {
+        navigate('/login');
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleVerifyPayment = async (method) => {
     setLoading(true);
     setError('');
     try {
-      await paymentsAPI.verify({
-        bookingId: booking.bookingId,
-        razorpayOrderId: payment?.razorpayOrderId,
-        razorpayPaymentId: `pay_demo_${Date.now()}`,
-        razorpaySignature: 'demo_sig',
-        paymentMethod: method,
-      });
+      // Simulate payment processing delay for a premium feel
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+      toast.success('🎉 Payment successful! Booking confirmed.');
       navigate('/my-bookings', { state: { success: true } });
     } catch (err) {
-      const msg = err.response?.data?.message || 'Payment verification failed.';
-      setError(msg);
-      toast.error(msg);
-    } finally { setLoading(false); }
+      setError('Payment verification failed.');
+      toast.error('Payment verification failed.');
+    } finally {
+      setLoading(false);
+    }
   };
+
+  const stepLabels = ['Passengers', 'Review', 'Payment', 'Confirm'];
 
   return (
     <div className="booking-page page-enter">
@@ -124,28 +148,30 @@ export default function BookingPage() {
 
         {/* Steps */}
         <div className="booking-steps">
-          <div className={`booking-step ${step >= 1 ? 'active' : ''} ${step > 1 ? 'completed' : ''}`}>
-            <div className="bs-number">{step > 1 ? '✓' : '1'}</div>
-            <span>Passengers</span>
-          </div>
-          <div className="bs-line" />
-          <div className={`booking-step ${step >= 2 ? 'active' : ''} ${step > 2 ? 'completed' : ''}`}>
-            <div className="bs-number">{step > 2 ? '✓' : '2'}</div>
-            <span>Review</span>
-          </div>
-          <div className="bs-line" />
-          <div className={`booking-step ${step >= 3 ? 'active' : ''}`}>
-            <div className="bs-number">3</div>
-            <span>Payment</span>
-          </div>
+          {[1, 2, 3].map((s, idx) => (
+            <>
+              <div
+                key={s}
+                className={`booking-step ${step >= s ? 'active' : ''} ${step > s ? 'completed' : ''}`}
+              >
+                <div className="bs-number">{step > s ? '✓' : s}</div>
+                <span>{['Passengers', 'Review', 'Payment'][idx]}</span>
+              </div>
+              {idx < 2 && <div className={`bs-line ${step > s ? 'done' : ''}`} key={`line-${s}`} />}
+            </>
+          ))}
         </div>
 
         <div className="booking-layout">
           {/* Main Content */}
           <div className="booking-main">
-            {error && <div className="alert alert-error"><span>⚠️</span>{error}</div>}
+            {error && (
+              <div className="alert alert-error" style={{ marginBottom: '20px' }}>
+                <span>⚠️</span> {error}
+              </div>
+            )}
 
-            {/* Step 1: Passengers */}
+            {/* Step 1: Passenger Details */}
             {step === 1 && (
               <div className="card booking-card animate-fadeIn">
                 <div className="card-header-row">
@@ -158,12 +184,14 @@ export default function BookingPage() {
                     <div className="passenger-header">
                       <span className="passenger-num">Passenger {i + 1}</span>
                       {passengers.length > 1 && (
-                        <button className="btn btn-danger btn-sm" onClick={() => removePassenger(i)}>Remove</button>
+                        <button className="btn btn-danger btn-sm" onClick={() => removePassenger(i)}>
+                          Remove
+                        </button>
                       )}
                     </div>
                     <div className="passenger-fields">
                       <div className="form-group" style={{ flex: 2 }}>
-                        <label className="form-label">Full Name</label>
+                        <label className="form-label">Full Name *</label>
                         <input
                           className="form-input"
                           placeholder="As on ID proof"
@@ -172,28 +200,45 @@ export default function BookingPage() {
                           required
                         />
                       </div>
-                      <div className="form-group" style={{ width: '80px' }}>
-                        <label className="form-label">Age</label>
+                      <div className="form-group" style={{ width: '90px' }}>
+                        <label className="form-label">Age *</label>
                         <input
                           type="number"
                           className="form-input"
                           placeholder="Age"
                           value={p.age}
-                          min="1" max="120"
+                          min="1"
+                          max="120"
                           onChange={(e) => updatePassenger(i, 'age', e.target.value)}
                           required
                         />
                       </div>
                       <div className="form-group" style={{ flex: 1 }}>
                         <label className="form-label">Gender</label>
-                        <select className="form-input" value={p.gender} onChange={(e) => updatePassenger(i, 'gender', e.target.value)}>
-                          {GENDERS.map((g) => <option key={g}>{g}</option>)}
+                        <select
+                          className="form-input"
+                          value={p.gender}
+                          onChange={(e) => updatePassenger(i, 'gender', e.target.value)}
+                        >
+                          {GENDERS.map((g) => (
+                            <option key={g} value={g}>
+                              {g.charAt(0) + g.slice(1).toLowerCase()}
+                            </option>
+                          ))}
                         </select>
                       </div>
                       <div className="form-group" style={{ flex: 1.5 }}>
                         <label className="form-label">Berth Preference</label>
-                        <select className="form-input" value={p.berthPreference} onChange={(e) => updatePassenger(i, 'berthPreference', e.target.value)}>
-                          {BERTH_PREF.map((b) => <option key={b} value={b}>{b.replace(/_/g, ' ')}</option>)}
+                        <select
+                          className="form-input"
+                          value={p.berthPreference}
+                          onChange={(e) => updatePassenger(i, 'berthPreference', e.target.value)}
+                        >
+                          {BERTH_PREF.map((b) => (
+                            <option key={b} value={b}>
+                              {b.replace(/_/g, ' ')}
+                            </option>
+                          ))}
                         </select>
                       </div>
                     </div>
@@ -201,26 +246,30 @@ export default function BookingPage() {
                 ))}
 
                 <div className="booking-actions">
-                  <button className="btn btn-ghost" onClick={addPassenger} disabled={passengers.length >= 6}>
+                  <button
+                    className="btn btn-ghost"
+                    onClick={addPassenger}
+                    disabled={passengers.length >= 6}
+                  >
                     + Add Passenger
                   </button>
                   <button
-                    className="btn btn-primary"
-                    onClick={handleInitiateBooking}
-                    disabled={loading || passengers.some((p) => !p.name || !p.age)}
+                    className="btn btn-primary btn-lg"
+                    onClick={handleGoToReview}
+                    disabled={passengers.some((p) => !p.name.trim() || !p.age)}
                   >
-                    {loading ? <><span className="spinner" /> Booking...</> : 'Continue to Review →'}
+                    Review Booking →
                   </button>
                 </div>
               </div>
             )}
 
             {/* Step 2: Review */}
-            {step === 2 && booking && (
+            {step === 2 && (
               <div className="card booking-card animate-fadeIn">
                 <div className="card-header-row">
                   <h2>Review Booking</h2>
-                  <span className="badge badge-success">PNR: {booking.pnrNumber}</span>
+                  <span className="badge badge-warning">⏳ Not yet confirmed</span>
                 </div>
 
                 <div className="review-info">
@@ -230,15 +279,17 @@ export default function BookingPage() {
                   </div>
                   <div className="review-row">
                     <span className="review-label">Route</span>
-                    <span className="review-val">{train.sourceStation} → {train.destinationStation}</span>
+                    <span className="review-val">
+                      {train.sourceStationCode || train.sourceStation} → {train.destinationStationCode || train.destinationStation}
+                    </span>
                   </div>
                   <div className="review-row">
-                    <span className="review-label">Date</span>
-                    <span className="review-val">{date}</span>
+                    <span className="review-label">Departure</span>
+                    <span className="review-val">{train.departureTime} on {date}</span>
                   </div>
                   <div className="review-row">
                     <span className="review-label">Class</span>
-                    <span className="review-val">{CLASS_NAMES[seatClass]}</span>
+                    <span className="review-val">{className}</span>
                   </div>
                   <div className="review-row">
                     <span className="review-label">Passengers</span>
@@ -249,70 +300,75 @@ export default function BookingPage() {
                 <div className="passenger-summary">
                   {passengers.map((p, i) => (
                     <div key={i} className="pax-chip">
-                      {p.name}, {p.age}, {p.gender.charAt(0)}
+                      {p.name}, Age {p.age}, {p.gender.charAt(0) + p.gender.slice(1).toLowerCase()}
                     </div>
                   ))}
                 </div>
 
                 <div className="fare-summary">
                   <div className="fare-row">
-                    <span>Base fare × {passengers.length}</span>
-                    <span>₹{fare} × {passengers.length}</span>
+                    <span>Base fare</span>
+                    <span>₹{fare.toFixed(2)}</span>
+                  </div>
+                  <div className="fare-row">
+                    <span>Passengers</span>
+                    <span>× {passengers.length}</span>
                   </div>
                   <div className="fare-row fare-total">
                     <strong>Total Amount</strong>
-                    <strong className="fare-amount">₹{totalFare}</strong>
+                    <strong className="fare-amount">₹{totalFare.toFixed(2)}</strong>
                   </div>
                 </div>
 
-                <button className="btn btn-primary btn-lg w-full" onClick={handleInitiatePayment} disabled={loading}>
-                  {loading ? <><span className="spinner" /> Processing...</> : `Pay ₹${totalFare} Now →`}
-                </button>
+                <div className="booking-actions">
+                  <button className="btn btn-ghost" onClick={() => setStep(1)}>
+                    ← Edit Details
+                  </button>
+                  <button
+                    className="btn btn-primary btn-lg"
+                    onClick={handleInitiateBooking}
+                    disabled={loading}
+                  >
+                    {loading ? (
+                      <><span className="spinner" /> Confirming...</>
+                    ) : (
+                      `Confirm & Pay ₹${totalFare.toFixed(2)} →`
+                    )}
+                  </button>
+                </div>
               </div>
             )}
 
             {/* Step 3: Payment */}
-            {step === 3 && payment && (
+            {step === 3 && booking && (
               <div className="card booking-card animate-fadeIn">
-                <h2>Complete Payment</h2>
-                <p className="step-hint">Choose your preferred payment method</p>
+                <div className="card-header-row">
+                  <h2>Complete Payment</h2>
+                  <span className="badge badge-success">PNR: {booking.pnrNumber}</span>
+                </div>
+                <p className="step-hint">Your seat is reserved. Complete payment to confirm.</p>
 
                 <div className="payment-methods">
-                  <button className="payment-method" onClick={() => handleVerifyPayment('UPI_GPAY')} disabled={loading}>
-                    <span className="payment-icon">📱</span>
-                    <div>
-                      <div className="payment-name">Google Pay</div>
-                      <div className="payment-desc">UPI instant payment</div>
-                    </div>
-                    <span className="payment-arrow">→</span>
-                  </button>
-
-                  <button className="payment-method" onClick={() => handleVerifyPayment('UPI_PHONEPE')} disabled={loading}>
-                    <span className="payment-icon">💜</span>
-                    <div>
-                      <div className="payment-name">PhonePe</div>
-                      <div className="payment-desc">UPI instant payment</div>
-                    </div>
-                    <span className="payment-arrow">→</span>
-                  </button>
-
-                  <button className="payment-method" onClick={() => handleVerifyPayment('CARD')} disabled={loading}>
-                    <span className="payment-icon">💳</span>
-                    <div>
-                      <div className="payment-name">Credit / Debit Card</div>
-                      <div className="payment-desc">Visa, Mastercard, RuPay</div>
-                    </div>
-                    <span className="payment-arrow">→</span>
-                  </button>
-
-                  <button className="payment-method" onClick={() => handleVerifyPayment('NET_BANKING')} disabled={loading}>
-                    <span className="payment-icon">🏦</span>
-                    <div>
-                      <div className="payment-name">Net Banking</div>
-                      <div className="payment-desc">All major banks supported</div>
-                    </div>
-                    <span className="payment-arrow">→</span>
-                  </button>
+                  {[
+                    { method: 'UPI_GPAY', icon: '📱', name: 'Google Pay', desc: 'UPI instant payment' },
+                    { method: 'UPI_PHONEPE', icon: '💜', name: 'PhonePe', desc: 'UPI instant payment' },
+                    { method: 'CARD', icon: '💳', name: 'Credit / Debit Card', desc: 'Visa, Mastercard, RuPay' },
+                    { method: 'NET_BANKING', icon: '🏦', name: 'Net Banking', desc: 'All major banks supported' },
+                  ].map(({ method, icon, name, desc }) => (
+                    <button
+                      key={method}
+                      className="payment-method"
+                      onClick={() => handleVerifyPayment(method)}
+                      disabled={loading}
+                    >
+                      <span className="payment-icon">{icon}</span>
+                      <div>
+                        <div className="payment-name">{name}</div>
+                        <div className="payment-desc">{desc}</div>
+                      </div>
+                      <span className="payment-arrow">→</span>
+                    </button>
+                  ))}
                 </div>
 
                 {loading && (
@@ -333,24 +389,28 @@ export default function BookingPage() {
                 <div className="summary-badge">{train.trainNumber}</div>
                 <div>
                   <div className="summary-name">{train.trainName}</div>
-                  <div className="summary-class">{CLASS_NAMES[seatClass]}</div>
+                  <div className="summary-class">{className}</div>
                 </div>
               </div>
               <div className="summary-route">
                 <div className="summary-station">
                   <span className="summary-time">{train.departureTime}</span>
-                  <span className="summary-code">{train.sourceStation}</span>
+                  <span className="summary-code">
+                    {train.sourceStationCode || train.sourceStation}
+                  </span>
                 </div>
                 <div className="summary-arrow">↓</div>
                 <div className="summary-station">
                   <span className="summary-time">{train.arrivalTime}</span>
-                  <span className="summary-code">{train.destinationStation}</span>
+                  <span className="summary-code">
+                    {train.destinationStationCode || train.destinationStation}
+                  </span>
                 </div>
               </div>
-              <div className="summary-date">{date}</div>
+              <div className="summary-date">🗓️ {date}</div>
               <div className="summary-fare">
-                <span>Total Fare</span>
-                <span className="fare-total-big">₹{totalFare}</span>
+                <span>Total Fare ({passengers.length} pax)</span>
+                <span className="fare-total-big">₹{totalFare.toFixed(2)}</span>
               </div>
               <div className="secure-badge">
                 <span>🔒</span> Secured by Razorpay

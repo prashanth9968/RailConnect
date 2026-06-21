@@ -15,28 +15,39 @@ const CLASS_LABELS = {
 
 function AvailBadge({ avail }) {
   if (!avail) return null;
-  const { availableSeats, status } = avail;
-  if (status === 'AVAILABLE' || availableSeats > 0)
-    return <span className="badge badge-success">✓ {availableSeats} Available</span>;
+  const { availableSeats, status, waitlistCount } = avail;
+  if (status === 'AVAILABLE' && availableSeats > 0)
+    return <span className="badge badge-success">✓ {availableSeats} Avail</span>;
   if (status === 'RAC')
     return <span className="badge badge-warning">RAC {availableSeats}</span>;
-  return <span className="badge badge-danger">WL {avail.waitingListCount || 0}</span>;
+  if (status === 'NOT_AVAILABLE' || availableSeats === 0)
+    return <span className="badge badge-danger">Not Available</span>;
+  if (waitlistCount > 0)
+    return <span className="badge badge-danger">WL {waitlistCount}</span>;
+  return null;
 }
 
 function TrainCard({ train, date, onBook, onViewRoute }) {
   const [expanded, setExpanded] = useState(false);
-  const [avail, setAvail] = useState(null);
   const [loadingAvail, setLoadingAvail] = useState(false);
 
-  const fetchAvail = async () => {
-    if (avail) { setExpanded(!expanded); return; }
-    setExpanded(true);
-    setLoadingAvail(true);
-    try {
-      const res = await trainsAPI.getAvailability(train.trainId, date);
-      setAvail(res.data.data);
-    } catch { setAvail({}); }
-    finally { setLoadingAvail(false); }
+  // classAvailability comes directly from the search response — use it immediately
+  const avail = train.classAvailability || {};
+  // Derive class list from the availability map keys (S3, S2, S1, etc.)
+  const classKeys = Object.keys(avail);
+
+  const toggleExpand = () => {
+    if (classKeys.length > 0) {
+      setExpanded(!expanded);
+    } else {
+      // Fallback: fetch separately if not in search result
+      setExpanded(true);
+      setLoadingAvail(true);
+      trainsAPI.getAvailability(train.trainId, date)
+        .then(res => { /* avail is derived from train.classAvailability */ })
+        .catch(() => {})
+        .finally(() => setLoadingAvail(false));
+    }
   };
 
   return (
@@ -77,8 +88,8 @@ function TrainCard({ train, date, onBook, onViewRoute }) {
             <button className="btn btn-ghost btn-sm" onClick={() => onViewRoute(train)}>
               🗺️ Route
             </button>
-            <button className="btn btn-secondary btn-sm" onClick={fetchAvail}>
-              {expanded ? '▲ Hide' : '▼ Check Seats'}
+            <button className="btn btn-secondary btn-sm" onClick={toggleExpand}>
+              {expanded ? '▲ Hide' : `▼ Check Seats (${classKeys.length})`}
             </button>
           </div>
         </div>
@@ -90,23 +101,34 @@ function TrainCard({ train, date, onBook, onViewRoute }) {
             <div style={{ display: 'flex', justifyContent: 'center', padding: '20px' }}>
               <div className="spinner" />
             </div>
+          ) : classKeys.length === 0 ? (
+            <div style={{ padding: '20px', textAlign: 'center', color: 'var(--color-text-muted)' }}>
+              No seat classes available for this date.
+            </div>
           ) : (
             <div className="class-grid">
-              {train.availableClasses?.map((cls) => {
+              {classKeys.map((cls) => {
                 const info = CLASS_LABELS[cls] || { label: cls, name: cls, color: '#64748b' };
-                const clsAvail = avail?.[cls];
+                const clsAvail = avail[cls];
+                const notAvail = clsAvail?.status === 'NOT_AVAILABLE' || clsAvail?.availableSeats === 0;
                 return (
                   <button
                     key={cls}
-                    className="class-card"
-                    style={{ '--cls-color': info.color }}
-                    onClick={() => onBook(train, cls, date)}
+                    className={`class-card ${notAvail ? 'class-card-unavail' : ''}`}
+                    style={{ '--cls-color': notAvail ? '#94a3b8' : info.color }}
+                    onClick={() => !notAvail && onBook(train, cls, date)}
+                    disabled={notAvail}
                   >
-                    <div className="class-badge" style={{ color: info.color, borderColor: info.color }}>
+                    <div className="class-badge" style={{
+                      color: notAvail ? '#94a3b8' : info.color,
+                      borderColor: notAvail ? '#94a3b8' : info.color
+                    }}>
                       {info.label}
                     </div>
                     <div className="class-name">{info.name}</div>
-                    {clsAvail && <div className="class-fare">₹{clsAvail.fare || '—'}</div>}
+                    {clsAvail?.baseFare && (
+                      <div className="class-fare">₹{clsAvail.baseFare}</div>
+                    )}
                     <AvailBadge avail={clsAvail} />
                   </button>
                 );

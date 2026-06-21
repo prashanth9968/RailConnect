@@ -23,6 +23,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.LocalTime;
 import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -167,6 +168,18 @@ public class BookingService {
         Booking booking = bookingRepository.findByPnrNumber(pnr)
             .orElseThrow(() -> new RailConnectException("PNR not found: " + pnr, HttpStatus.NOT_FOUND));
 
+        LocalTime depTime = booking.getTrain().getRoutes().stream()
+            .filter(r -> r.getStation().getStationCode().equalsIgnoreCase(booking.getSourceStation().getStationCode()))
+            .map(TrainRoute::getDepartureTime)
+            .findFirst()
+            .orElse(null);
+
+        LocalTime arrTime = booking.getTrain().getRoutes().stream()
+            .filter(r -> r.getStation().getStationCode().equalsIgnoreCase(booking.getDestinationStation().getStationCode()))
+            .map(TrainRoute::getArrivalTime)
+            .findFirst()
+            .orElse(null);
+
         return PnrStatusResponse.builder()
             .pnrNumber(booking.getPnrNumber())
             .trainNumber(booking.getTrain().getTrainNumber())
@@ -178,6 +191,9 @@ public class BookingService {
             .chartStatus(booking.getStatus())
             .passengers(booking.getPassengers().stream().map(this::toPassengerResponse).toList())
             .boardingPoint(booking.getBoardingStationCode())
+            .totalFare(booking.getTotalAmount())
+            .departureTime(depTime)
+            .arrivalTime(arrTime)
             .build();
     }
 

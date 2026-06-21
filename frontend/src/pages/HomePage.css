@@ -6,7 +6,8 @@
   min-height: 85vh;
   display: flex;
   align-items: center;
-  overflow: hidden;
+  /* overflow must be visible so autocomplete dropdowns aren't clipped */
+  overflow: visible;
   padding: 100px 0 60px;
 }
 
@@ -15,6 +16,9 @@
   inset: 0;
   pointer-events: none;
   background: var(--gradient-hero);
+  /* clip only the bg orbs, not the content above */
+  overflow: hidden;
+  border-radius: inherit;
 }
 
 .hero-orb {
@@ -88,11 +92,14 @@
 
 /* ── Search Widget ── */
 .search-widget {
+  position: relative;
+  z-index: 10;
   width: 100%;
   max-width: 900px;
   border-radius: var(--radius-xl);
   padding: 0;
-  overflow: hidden;
+  /* overflow MUST be visible — hidden would clip the autocomplete dropdown */
+  overflow: visible;
   box-shadow: var(--shadow-card);
   background: var(--color-surface);
   border: 1px solid var(--color-border);
@@ -102,6 +109,7 @@
   display: flex;
   background: var(--color-surface-2);
   border-bottom: 1px solid var(--color-border);
+  border-radius: var(--radius-xl) var(--radius-xl) 0 0;
   padding: 6px;
   gap: 6px;
 }
@@ -136,12 +144,18 @@
 
 .widget-form {
   padding: 32px;
+  /* Allow autocomplete dropdowns to overflow the form */
+  overflow: visible;
+  position: relative;
 }
 
 .search-row {
   display: flex;
   align-items: flex-end;
   gap: 16px;
+  /* Must be visible so autocomplete dropdown doesn't get clipped */
+  overflow: visible;
+  position: relative;
 }
 
 .swap-btn {

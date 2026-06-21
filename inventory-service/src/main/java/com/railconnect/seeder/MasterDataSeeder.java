@@ -25,7 +25,7 @@ public class MasterDataSeeder implements CommandLineRunner {
     private final TrainRepository trainRepository;
     private final SystemMetadataRepository metadataRepository;
 
-    public static final String MASTER_DATA_VERSION = "1";
+    public static final String MASTER_DATA_VERSION = "2";
 
     @Override
     @Transactional
