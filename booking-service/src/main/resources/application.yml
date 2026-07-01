@@ -39,11 +39,13 @@ spring:
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
 
 server:
-  port: 8082
+  port: ${PORT:8082}
   compression:
     enabled: true
 
 app:
+  kafka:
+    enabled: ${APP_KAFKA_ENABLED:true}
   jwt:
     secret: ${JWT_SECRET:404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970}
   inventory-service-uri: ${INVENTORY_SERVICE_URI:http://localhost:8083}

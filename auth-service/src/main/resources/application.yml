@@ -41,7 +41,7 @@ spring:
             redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
 
 server:
-  port: 8081
+  port: ${PORT:8081}
   compression:
     enabled: true
 

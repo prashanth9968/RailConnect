@@ -47,13 +47,13 @@ spring:
       mail.smtp.starttls.enable: true
 
 server:
-  port: 8086
+  port: ${PORT:8086}
   compression:
     enabled: true
 
 app:
   kafka:
-    enabled: false
+    enabled: ${APP_KAFKA_ENABLED:false}
 
   jwt:
     secret: ${JWT_SECRET:404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970}

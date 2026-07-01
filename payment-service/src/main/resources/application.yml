@@ -39,11 +39,13 @@ spring:
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
 
 server:
-  port: 8084
+  port: ${PORT:8084}
   compression:
     enabled: true
 
 app:
+  kafka:
+    enabled: ${APP_KAFKA_ENABLED:true}
   jwt:
     secret: ${JWT_SECRET:404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970}
 
