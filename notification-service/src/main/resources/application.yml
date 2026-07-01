@@ -23,6 +23,8 @@ spring:
       port: ${REDIS_PORT:6379}
       password: ${REDIS_PASS:}
       timeout: 2000ms
+      ssl:
+        enabled: ${REDIS_SSL_ENABLED:false}
 
   kafka:
     bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:29092}

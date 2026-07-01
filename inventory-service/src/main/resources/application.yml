@@ -27,6 +27,8 @@ spring:
       port: ${REDIS_PORT:6379}
       password: ${REDIS_PASS:}
       timeout: 2000ms
+      ssl:
+        enabled: ${REDIS_SSL_ENABLED:false}
 
 server:
   port: ${PORT:8083}
