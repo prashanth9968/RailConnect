@@ -43,6 +43,7 @@ public class SecurityConfig {
         "/v3/api-docs/**",
         "/swagger-ui/**",
         "/actuator/health",
+        "/health",
         "/ws/**"
     };
 

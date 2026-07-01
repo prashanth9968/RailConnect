@@ -57,3 +57,13 @@ logging:
   level:
     com.railconnect: INFO
     org.springframework.security: WARN
+
+management:
+  endpoints:
+    web:
+      base-path: /
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: never
